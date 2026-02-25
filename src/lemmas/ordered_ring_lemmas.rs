@@ -2,6 +2,7 @@ use vstd::prelude::*;
 use crate::traits::ordered_ring::OrderedRing;
 use crate::lemmas::additive_group_lemmas::*;
 use crate::lemmas::ring_lemmas::*;
+use crate::lemmas::partial_order_lemmas;
 
 verus! {
 
@@ -170,8 +171,7 @@ pub proof fn lemma_le_congruence_left<R: OrderedRing>(a1: R, a2: R, b: R)
     ensures
         a2.le(b),
 {
-    R::axiom_eqv_reflexive(b);
-    R::axiom_le_congruence(a1, a2, b, b);
+    partial_order_lemmas::lemma_le_congruence_left::<R>(a1, a2, b);
 }
 
 /// Single-arg right congruence: a ≤ b1 and b1 ≡ b2 implies a ≤ b2.
@@ -182,8 +182,7 @@ pub proof fn lemma_le_congruence_right<R: OrderedRing>(a: R, b1: R, b2: R)
     ensures
         a.le(b2),
 {
-    R::axiom_eqv_reflexive(a);
-    R::axiom_le_congruence(a, a, b1, b2);
+    partial_order_lemmas::lemma_le_congruence_right::<R>(a, b1, b2);
 }
 
 /// a < b and b ≤ c implies a < c.

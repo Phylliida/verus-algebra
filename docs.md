@@ -88,49 +88,60 @@
 - **`proof fn lemma_abs_pos_iff`** — [inequalities/mod.rs:911](./src/inequalities/mod.rs#L911)
   > 0 < abs(a) if and only if ¬(a ≡ 0).
 
+## `lemmas::additive_commutative_monoid_lemmas`
+
+### Proof Functions
+
+- **`proof fn lemma_add_zero_left`** — [lemmas/additive_commutative_monoid_lemmas.rs:8](./src/lemmas/additive_commutative_monoid_lemmas.rs#L8)
+  > Left identity: 0 + a ≡ a. Derived from right identity + commutativity.
+- **`proof fn lemma_add_congruence_right`** — [lemmas/additive_commutative_monoid_lemmas.rs:20](./src/lemmas/additive_commutative_monoid_lemmas.rs#L20)
+  > Addition respects equivalence on the right: if b ≡ c then a + b ≡ a + c. Derived from commutativity + left congruence.
+- **`proof fn lemma_add_congruence`** — [lemmas/additive_commutative_monoid_lemmas.rs:35](./src/lemmas/additive_commutative_monoid_lemmas.rs#L35)
+  > Full addition congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 + b1 ≡ a2 + b2.
+
 ## `lemmas::additive_group_lemmas`
 
 ### Proof Functions
 
-- **`proof fn lemma_add_zero_left`** — [lemmas/additive_group_lemmas.rs:8](./src/lemmas/additive_group_lemmas.rs#L8)
+- **`proof fn lemma_add_zero_left`** — [lemmas/additive_group_lemmas.rs:9](./src/lemmas/additive_group_lemmas.rs#L9)
   > Left identity: 0 + a ≡ a. Derived from right identity + commutativity.
-- **`proof fn lemma_add_inverse_left`** — [lemmas/additive_group_lemmas.rs:19](./src/lemmas/additive_group_lemmas.rs#L19)
+- **`proof fn lemma_add_inverse_left`** — [lemmas/additive_group_lemmas.rs:18](./src/lemmas/additive_group_lemmas.rs#L18)
   > Left inverse: (-a) + a ≡ 0. Derived from right inverse + commutativity.
-- **`proof fn lemma_add_congruence_right`** — [lemmas/additive_group_lemmas.rs:31](./src/lemmas/additive_group_lemmas.rs#L31)
+- **`proof fn lemma_add_congruence_right`** — [lemmas/additive_group_lemmas.rs:30](./src/lemmas/additive_group_lemmas.rs#L30)
   > Addition respects equivalence on the right: if b ≡ c then a + b ≡ a + c. Derived from commutativity + left congruence.
-- **`proof fn lemma_add_congruence`** — [lemmas/additive_group_lemmas.rs:46](./src/lemmas/additive_group_lemmas.rs#L46)
+- **`proof fn lemma_add_congruence`** — [lemmas/additive_group_lemmas.rs:40](./src/lemmas/additive_group_lemmas.rs#L40)
   > Full addition congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 + b1 ≡ a2 + b2.
-- **`proof fn lemma_add_right_cancel`** — [lemmas/additive_group_lemmas.rs:59](./src/lemmas/additive_group_lemmas.rs#L59)
+- **`proof fn lemma_add_right_cancel`** — [lemmas/additive_group_lemmas.rs:51](./src/lemmas/additive_group_lemmas.rs#L51)
   > Right cancellation: if a + k ≡ b + k then a ≡ b.
-- **`proof fn lemma_add_left_cancel`** — [lemmas/additive_group_lemmas.rs:96](./src/lemmas/additive_group_lemmas.rs#L96)
+- **`proof fn lemma_add_left_cancel`** — [lemmas/additive_group_lemmas.rs:88](./src/lemmas/additive_group_lemmas.rs#L88)
   > Left cancellation: if k + a ≡ k + b then a ≡ b.
-- **`proof fn lemma_neg_involution`** — [lemmas/additive_group_lemmas.rs:114](./src/lemmas/additive_group_lemmas.rs#L114)
+- **`proof fn lemma_neg_involution`** — [lemmas/additive_group_lemmas.rs:106](./src/lemmas/additive_group_lemmas.rs#L106)
   > Double negation: -(-a) ≡ a.
-- **`proof fn lemma_neg_zero`** — [lemmas/additive_group_lemmas.rs:134](./src/lemmas/additive_group_lemmas.rs#L134)
+- **`proof fn lemma_neg_zero`** — [lemmas/additive_group_lemmas.rs:126](./src/lemmas/additive_group_lemmas.rs#L126)
   > Negation of zero: -0 ≡ 0.
-- **`proof fn lemma_sub_self`** — [lemmas/additive_group_lemmas.rs:152](./src/lemmas/additive_group_lemmas.rs#L152)
+- **`proof fn lemma_sub_self`** — [lemmas/additive_group_lemmas.rs:144](./src/lemmas/additive_group_lemmas.rs#L144)
   > a - a ≡ 0.
-- **`proof fn lemma_sub_congruence`** — [lemmas/additive_group_lemmas.rs:162](./src/lemmas/additive_group_lemmas.rs#L162)
+- **`proof fn lemma_sub_congruence`** — [lemmas/additive_group_lemmas.rs:154](./src/lemmas/additive_group_lemmas.rs#L154)
   > Full subtraction congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 - b1 ≡ a2 - b2.
-- **`proof fn lemma_add_then_sub_cancel`** — [lemmas/additive_group_lemmas.rs:185](./src/lemmas/additive_group_lemmas.rs#L185)
+- **`proof fn lemma_add_then_sub_cancel`** — [lemmas/additive_group_lemmas.rs:177](./src/lemmas/additive_group_lemmas.rs#L177)
   > (a + b) - b ≡ a.
-- **`proof fn lemma_sub_then_add_cancel`** — [lemmas/additive_group_lemmas.rs:206](./src/lemmas/additive_group_lemmas.rs#L206)
+- **`proof fn lemma_sub_then_add_cancel`** — [lemmas/additive_group_lemmas.rs:198](./src/lemmas/additive_group_lemmas.rs#L198)
   > (a - b) + b ≡ a.
-- **`proof fn lemma_neg_add`** — [lemmas/additive_group_lemmas.rs:228](./src/lemmas/additive_group_lemmas.rs#L228)
+- **`proof fn lemma_neg_add`** — [lemmas/additive_group_lemmas.rs:220](./src/lemmas/additive_group_lemmas.rs#L220)
   > -(a + b) ≡ (-a) + (-b).
-- **`proof fn lemma_sub_antisymmetric`** — [lemmas/additive_group_lemmas.rs:325](./src/lemmas/additive_group_lemmas.rs#L325)
+- **`proof fn lemma_sub_antisymmetric`** — [lemmas/additive_group_lemmas.rs:317](./src/lemmas/additive_group_lemmas.rs#L317)
   > a - b ≡ -(b - a).
-- **`proof fn lemma_sub_eqv_zero_implies_eqv`** — [lemmas/additive_group_lemmas.rs:357](./src/lemmas/additive_group_lemmas.rs#L357)
+- **`proof fn lemma_sub_eqv_zero_implies_eqv`** — [lemmas/additive_group_lemmas.rs:349](./src/lemmas/additive_group_lemmas.rs#L349)
   > a - b ≡ 0 implies a ≡ b.
-- **`proof fn lemma_eqv_implies_sub_eqv_zero`** — [lemmas/additive_group_lemmas.rs:376](./src/lemmas/additive_group_lemmas.rs#L376)
+- **`proof fn lemma_eqv_implies_sub_eqv_zero`** — [lemmas/additive_group_lemmas.rs:368](./src/lemmas/additive_group_lemmas.rs#L368)
   > a ≡ b implies a - b ≡ 0.
-- **`proof fn lemma_sub_neg_both`** — [lemmas/additive_group_lemmas.rs:390](./src/lemmas/additive_group_lemmas.rs#L390)
+- **`proof fn lemma_sub_neg_both`** — [lemmas/additive_group_lemmas.rs:382](./src/lemmas/additive_group_lemmas.rs#L382)
   > (-a) - (-b) ≡ b - a.
-- **`proof fn lemma_add_rearrange_2x2`** — [lemmas/additive_group_lemmas.rs:411](./src/lemmas/additive_group_lemmas.rs#L411)
+- **`proof fn lemma_add_rearrange_2x2`** — [lemmas/additive_group_lemmas.rs:403](./src/lemmas/additive_group_lemmas.rs#L403)
   > (a + b) + (c + d) ≡ (a + c) + (b + d).
-- **`proof fn lemma_add_identity_unique`** — [lemmas/additive_group_lemmas.rs:457](./src/lemmas/additive_group_lemmas.rs#L457)
+- **`proof fn lemma_add_identity_unique`** — [lemmas/additive_group_lemmas.rs:449](./src/lemmas/additive_group_lemmas.rs#L449)
   > If a + e ≡ a for all a (witnessed by a=0), then e ≡ 0. Specifically: 0 + e ≡ 0 implies e ≡ 0.
-- **`proof fn lemma_neg_unique`** — [lemmas/additive_group_lemmas.rs:472](./src/lemmas/additive_group_lemmas.rs#L472)
+- **`proof fn lemma_neg_unique`** — [lemmas/additive_group_lemmas.rs:464](./src/lemmas/additive_group_lemmas.rs#L464)
   > If a + b ≡ 0, then b ≡ -a.
 
 ## `lemmas::field_lemmas`
@@ -199,58 +210,69 @@
 
 ### Proof Functions
 
-- **`proof fn lemma_lt_irreflexive`** — [lemmas/ordered_ring_lemmas.rs:9](./src/lemmas/ordered_ring_lemmas.rs#L9)
+- **`proof fn lemma_lt_irreflexive`** — [lemmas/ordered_ring_lemmas.rs:10](./src/lemmas/ordered_ring_lemmas.rs#L10)
   > Strict order is irreflexive: !(a < a).
-- **`proof fn lemma_lt_asymmetric`** — [lemmas/ordered_ring_lemmas.rs:18](./src/lemmas/ordered_ring_lemmas.rs#L18)
+- **`proof fn lemma_lt_asymmetric`** — [lemmas/ordered_ring_lemmas.rs:19](./src/lemmas/ordered_ring_lemmas.rs#L19)
   > Strict order is asymmetric: a < b implies !(b < a).
-- **`proof fn lemma_lt_transitive`** — [lemmas/ordered_ring_lemmas.rs:35](./src/lemmas/ordered_ring_lemmas.rs#L35)
+- **`proof fn lemma_lt_transitive`** — [lemmas/ordered_ring_lemmas.rs:36](./src/lemmas/ordered_ring_lemmas.rs#L36)
   > Strict order is transitive: a < b && b < c implies a < c.
-- **`proof fn lemma_le_add_compatible`** — [lemmas/ordered_ring_lemmas.rs:62](./src/lemmas/ordered_ring_lemmas.rs#L62)
+- **`proof fn lemma_le_add_compatible`** — [lemmas/ordered_ring_lemmas.rs:63](./src/lemmas/ordered_ring_lemmas.rs#L63)
   > a <= b implies a + c <= b + c (restated for convenience; same as axiom).
-- **`proof fn lemma_lt_add_compatible`** — [lemmas/ordered_ring_lemmas.rs:72](./src/lemmas/ordered_ring_lemmas.rs#L72)
+- **`proof fn lemma_lt_add_compatible`** — [lemmas/ordered_ring_lemmas.rs:73](./src/lemmas/ordered_ring_lemmas.rs#L73)
   > a < b implies a + c < b + c.
-- **`proof fn lemma_nonneg_mul_nonneg`** — [lemmas/ordered_ring_lemmas.rs:89](./src/lemmas/ordered_ring_lemmas.rs#L89)
+- **`proof fn lemma_nonneg_mul_nonneg`** — [lemmas/ordered_ring_lemmas.rs:90](./src/lemmas/ordered_ring_lemmas.rs#L90)
   > 0 <= a and 0 <= b implies 0 <= a * b.
-- **`proof fn lemma_square_nonneg`** — [lemmas/ordered_ring_lemmas.rs:108](./src/lemmas/ordered_ring_lemmas.rs#L108)
+- **`proof fn lemma_square_nonneg`** — [lemmas/ordered_ring_lemmas.rs:109](./src/lemmas/ordered_ring_lemmas.rs#L109)
   > 0 <= a * a (squares are non-negative).
-- **`proof fn lemma_le_iff_lt_or_eqv`** — [lemmas/ordered_ring_lemmas.rs:151](./src/lemmas/ordered_ring_lemmas.rs#L151)
+- **`proof fn lemma_le_iff_lt_or_eqv`** — [lemmas/ordered_ring_lemmas.rs:152](./src/lemmas/ordered_ring_lemmas.rs#L152)
   > a ≤ b if and only if a < b or a ≡ b.
-- **`proof fn lemma_le_congruence_left`** — [lemmas/ordered_ring_lemmas.rs:166](./src/lemmas/ordered_ring_lemmas.rs#L166)
+- **`proof fn lemma_le_congruence_left`** — [lemmas/ordered_ring_lemmas.rs:167](./src/lemmas/ordered_ring_lemmas.rs#L167)
   > Single-arg left congruence: a1 ≡ a2 and a1 ≤ b implies a2 ≤ b.
 - **`proof fn lemma_le_congruence_right`** — [lemmas/ordered_ring_lemmas.rs:178](./src/lemmas/ordered_ring_lemmas.rs#L178)
   > Single-arg right congruence: a ≤ b1 and b1 ≡ b2 implies a ≤ b2.
-- **`proof fn lemma_lt_le_transitive`** — [lemmas/ordered_ring_lemmas.rs:190](./src/lemmas/ordered_ring_lemmas.rs#L190)
+- **`proof fn lemma_lt_le_transitive`** — [lemmas/ordered_ring_lemmas.rs:189](./src/lemmas/ordered_ring_lemmas.rs#L189)
   > a < b and b ≤ c implies a < c.
-- **`proof fn lemma_le_lt_transitive`** — [lemmas/ordered_ring_lemmas.rs:213](./src/lemmas/ordered_ring_lemmas.rs#L213)
+- **`proof fn lemma_le_lt_transitive`** — [lemmas/ordered_ring_lemmas.rs:212](./src/lemmas/ordered_ring_lemmas.rs#L212)
   > a ≤ b and b < c implies a < c.
-- **`proof fn lemma_le_neg_flip`** — [lemmas/ordered_ring_lemmas.rs:235](./src/lemmas/ordered_ring_lemmas.rs#L235)
+- **`proof fn lemma_le_neg_flip`** — [lemmas/ordered_ring_lemmas.rs:234](./src/lemmas/ordered_ring_lemmas.rs#L234)
   > a ≤ b implies -b ≤ -a.
-- **`proof fn lemma_lt_neg_flip`** — [lemmas/ordered_ring_lemmas.rs:303](./src/lemmas/ordered_ring_lemmas.rs#L303)
+- **`proof fn lemma_lt_neg_flip`** — [lemmas/ordered_ring_lemmas.rs:302](./src/lemmas/ordered_ring_lemmas.rs#L302)
   > a < b implies -b < -a.
-- **`proof fn lemma_neg_nonneg_iff`** — [lemmas/ordered_ring_lemmas.rs:327](./src/lemmas/ordered_ring_lemmas.rs#L327)
+- **`proof fn lemma_neg_nonneg_iff`** — [lemmas/ordered_ring_lemmas.rs:326](./src/lemmas/ordered_ring_lemmas.rs#L326)
   > 0 ≤ a if and only if -a ≤ 0.
-- **`proof fn lemma_neg_nonpos_iff`** — [lemmas/ordered_ring_lemmas.rs:351](./src/lemmas/ordered_ring_lemmas.rs#L351)
+- **`proof fn lemma_neg_nonpos_iff`** — [lemmas/ordered_ring_lemmas.rs:350](./src/lemmas/ordered_ring_lemmas.rs#L350)
   > a ≤ 0 if and only if 0 ≤ -a.
-- **`proof fn lemma_le_sub_monotone`** — [lemmas/ordered_ring_lemmas.rs:372](./src/lemmas/ordered_ring_lemmas.rs#L372)
+- **`proof fn lemma_le_sub_monotone`** — [lemmas/ordered_ring_lemmas.rs:371](./src/lemmas/ordered_ring_lemmas.rs#L371)
   > a ≤ b implies a - c ≤ b - c.
-- **`proof fn lemma_lt_sub_monotone`** — [lemmas/ordered_ring_lemmas.rs:389](./src/lemmas/ordered_ring_lemmas.rs#L389)
+- **`proof fn lemma_lt_sub_monotone`** — [lemmas/ordered_ring_lemmas.rs:388](./src/lemmas/ordered_ring_lemmas.rs#L388)
   > a < b implies a - c < b - c.
-- **`proof fn lemma_trichotomy`** — [lemmas/ordered_ring_lemmas.rs:415](./src/lemmas/ordered_ring_lemmas.rs#L415)
+- **`proof fn lemma_trichotomy`** — [lemmas/ordered_ring_lemmas.rs:414](./src/lemmas/ordered_ring_lemmas.rs#L414)
   > Trichotomy: exactly one of a < b, a ≡ b, b < a holds.
-- **`proof fn lemma_le_mul_nonneg_both`** — [lemmas/ordered_ring_lemmas.rs:451](./src/lemmas/ordered_ring_lemmas.rs#L451)
+- **`proof fn lemma_le_mul_nonneg_both`** — [lemmas/ordered_ring_lemmas.rs:450](./src/lemmas/ordered_ring_lemmas.rs#L450)
   > 0 ≤ a ≤ c and 0 ≤ b ≤ d implies a*b ≤ c*d.
-- **`proof fn lemma_zero_lt_one`** — [lemmas/ordered_ring_lemmas.rs:484](./src/lemmas/ordered_ring_lemmas.rs#L484)
+- **`proof fn lemma_zero_lt_one`** — [lemmas/ordered_ring_lemmas.rs:483](./src/lemmas/ordered_ring_lemmas.rs#L483)
   > 0 < 1.
-- **`proof fn lemma_add_nonneg_pos`** — [lemmas/ordered_ring_lemmas.rs:501](./src/lemmas/ordered_ring_lemmas.rs#L501)
+- **`proof fn lemma_add_nonneg_pos`** — [lemmas/ordered_ring_lemmas.rs:500](./src/lemmas/ordered_ring_lemmas.rs#L500)
   > 0 ≤ a and 0 < b implies 0 < a + b.
-- **`proof fn lemma_add_pos_nonneg`** — [lemmas/ordered_ring_lemmas.rs:519](./src/lemmas/ordered_ring_lemmas.rs#L519)
+- **`proof fn lemma_add_pos_nonneg`** — [lemmas/ordered_ring_lemmas.rs:518](./src/lemmas/ordered_ring_lemmas.rs#L518)
   > 0 < a and 0 ≤ b implies 0 < a + b.
-- **`proof fn lemma_le_add_both`** — [lemmas/ordered_ring_lemmas.rs:541](./src/lemmas/ordered_ring_lemmas.rs#L541)
+- **`proof fn lemma_le_add_both`** — [lemmas/ordered_ring_lemmas.rs:540](./src/lemmas/ordered_ring_lemmas.rs#L540)
   > a ≤ b and c ≤ d implies a + c ≤ b + d.
-- **`proof fn lemma_lt_add_both`** — [lemmas/ordered_ring_lemmas.rs:562](./src/lemmas/ordered_ring_lemmas.rs#L562)
+- **`proof fn lemma_lt_add_both`** — [lemmas/ordered_ring_lemmas.rs:561](./src/lemmas/ordered_ring_lemmas.rs#L561)
   > a < b and c < d implies a + c < b + d.
-- **`proof fn lemma_square_le_square`** — [lemmas/ordered_ring_lemmas.rs:593](./src/lemmas/ordered_ring_lemmas.rs#L593)
+- **`proof fn lemma_square_le_square`** — [lemmas/ordered_ring_lemmas.rs:592](./src/lemmas/ordered_ring_lemmas.rs#L592)
   > 0 ≤ a ≤ b implies a*a ≤ b*b.
+
+## `lemmas::partial_order_lemmas`
+
+### Proof Functions
+
+- **`proof fn lemma_le_congruence_left`** — [lemmas/partial_order_lemmas.rs:7](./src/lemmas/partial_order_lemmas.rs#L7)
+  > Single-arg left congruence: a1 ≡ a2 and a1 ≤ b implies a2 ≤ b.
+- **`proof fn lemma_le_congruence_right`** — [lemmas/partial_order_lemmas.rs:19](./src/lemmas/partial_order_lemmas.rs#L19)
+  > Single-arg right congruence: a ≤ b1 and b1 ≡ b2 implies a ≤ b2.
+- **`proof fn lemma_le_eqv_implies_le`** — [lemmas/partial_order_lemmas.rs:31](./src/lemmas/partial_order_lemmas.rs#L31)
+  > a ≡ b implies a ≤ b (from reflexivity + congruence).
 
 ## `lemmas::ring_lemmas`
 

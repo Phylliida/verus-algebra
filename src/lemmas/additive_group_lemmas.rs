@@ -1,5 +1,6 @@
 use vstd::prelude::*;
 use crate::traits::additive_group::AdditiveGroup;
+use crate::lemmas::additive_commutative_monoid_lemmas;
 
 verus! {
 
@@ -9,9 +10,7 @@ pub proof fn lemma_add_zero_left<A: AdditiveGroup>(a: A)
     ensures
         A::zero().add(a).eqv(a),
 {
-    A::axiom_add_commutative(A::zero(), a);
-    A::axiom_add_zero_right(a);
-    A::axiom_eqv_transitive(A::zero().add(a), a.add(A::zero()), a);
+    additive_commutative_monoid_lemmas::lemma_add_zero_left::<A>(a);
 }
 
 /// Left inverse: (-a) + a ≡ 0.
@@ -34,12 +33,7 @@ pub proof fn lemma_add_congruence_right<A: AdditiveGroup>(a: A, b: A, c: A)
     ensures
         a.add(b).eqv(a.add(c)),
 {
-    // a + b ≡ b + a ≡ c + a ≡ a + c
-    A::axiom_add_commutative(a, b);
-    A::axiom_add_congruence_left(b, c, a);
-    A::axiom_add_commutative(c, a);
-    A::axiom_eqv_transitive(a.add(b), b.add(a), c.add(a));
-    A::axiom_eqv_transitive(a.add(b), c.add(a), a.add(c));
+    additive_commutative_monoid_lemmas::lemma_add_congruence_right::<A>(a, b, c);
 }
 
 /// Full addition congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 + b1 ≡ a2 + b2.
@@ -50,9 +44,7 @@ pub proof fn lemma_add_congruence<A: AdditiveGroup>(a1: A, a2: A, b1: A, b2: A)
     ensures
         a1.add(b1).eqv(a2.add(b2)),
 {
-    A::axiom_add_congruence_left(a1, a2, b1);
-    lemma_add_congruence_right::<A>(a2, b1, b2);
-    A::axiom_eqv_transitive(a1.add(b1), a2.add(b1), a2.add(b2));
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<A>(a1, a2, b1, b2);
 }
 
 /// Right cancellation: if a + k ≡ b + k then a ≡ b.

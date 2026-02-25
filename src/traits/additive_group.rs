@@ -1,20 +1,15 @@
 use vstd::prelude::*;
-use crate::traits::equivalence::Equivalence;
+use crate::traits::additive_commutative_monoid::AdditiveCommutativeMonoid;
 
 verus! {
 
 /// Abelian group under addition with a compatible equivalence relation.
 ///
-/// Provides zero, add, neg, and sub (defaulted to add + neg). Implementors
-/// must prove the standard group axioms and that operations respect `eqv`.
-pub trait AdditiveGroup: Equivalence {
+/// Extends `AdditiveCommutativeMonoid` with negation and subtraction.
+/// Implementors must prove the inverse axiom, that subtraction equals
+/// addition of the negation, and that negation respects `eqv`.
+pub trait AdditiveGroup: AdditiveCommutativeMonoid {
     // ---- operations ----
-
-    /// The additive identity element.
-    spec fn zero() -> Self;
-
-    /// Addition of two elements.
-    spec fn add(self, other: Self) -> Self;
 
     /// Additive inverse (negation).
     spec fn neg(self) -> Self;
@@ -25,24 +20,6 @@ pub trait AdditiveGroup: Equivalence {
     spec fn sub(self, other: Self) -> Self;
 
     // ---- axioms: group laws ----
-
-    /// Commutativity: a + b ≡ b + a.
-    proof fn axiom_add_commutative(a: Self, b: Self)
-        ensures
-            a.add(b).eqv(b.add(a)),
-    ;
-
-    /// Associativity: (a + b) + c ≡ a + (b + c).
-    proof fn axiom_add_associative(a: Self, b: Self, c: Self)
-        ensures
-            a.add(b).add(c).eqv(a.add(b.add(c))),
-    ;
-
-    /// Right identity: a + 0 ≡ a.
-    proof fn axiom_add_zero_right(a: Self)
-        ensures
-            a.add(Self::zero()).eqv(a),
-    ;
 
     /// Right inverse: a + (-a) ≡ 0.
     proof fn axiom_add_inverse_right(a: Self)
@@ -57,14 +34,6 @@ pub trait AdditiveGroup: Equivalence {
     ;
 
     // ---- axioms: congruence ----
-
-    /// Addition respects equivalence on the left.
-    proof fn axiom_add_congruence_left(a: Self, b: Self, c: Self)
-        requires
-            a.eqv(b),
-        ensures
-            a.add(c).eqv(b.add(c)),
-    ;
 
     /// Negation respects equivalence.
     proof fn axiom_neg_congruence(a: Self, b: Self)
