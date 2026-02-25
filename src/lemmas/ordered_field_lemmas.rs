@@ -371,4 +371,140 @@ pub proof fn lemma_le_div_monotone<F: OrderedField>(a: F, b: F, c: F)
     F::axiom_le_congruence(a.mul(c.recip()), a.div(c), b.mul(c.recip()), b.div(c));
 }
 
+/// 0 < c and a*c ≤ b*c implies a ≤ b.
+pub proof fn lemma_mul_le_cancel_pos<F: OrderedField>(a: F, b: F, c: F)
+    requires
+        F::zero().lt(c),
+        a.mul(c).le(b.mul(c)),
+    ensures
+        a.le(b),
+{
+    F::axiom_le_total(a, b);
+    if !a.le(b) {
+        // b < a (from totality): b ≤ a and ¬b.eqv(a)
+        // b ≤ a and 0 ≤ c → b*c ≤ a*c
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), c);
+        F::axiom_le_mul_nonneg_monotone(b, a, c);
+        // Now b*c ≤ a*c and a*c ≤ b*c, so a*c ≡ b*c
+        F::axiom_le_antisymmetric(a.mul(c), b.mul(c));
+        // By mul_cancel_right: a ≡ b
+        F::axiom_eqv_symmetric(F::zero(), c);
+        lemma_mul_cancel_right::<F>(a, b, c);
+        // a ≡ b implies a ≤ b
+        F::axiom_le_reflexive(a);
+        F::axiom_eqv_reflexive(a);
+        F::axiom_le_congruence(a, a, a, b);
+    }
+}
+
+/// 0 < b and 0 < d implies: a/b ≤ c/d if and only if a*d ≤ c*b.
+pub proof fn lemma_cross_mul_le<F: OrderedField>(a: F, b: F, c: F, d: F)
+    requires
+        F::zero().lt(b),
+        F::zero().lt(d),
+    ensures
+        a.div(b).le(c.div(d)) == a.mul(d).le(c.mul(b)),
+{
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), b);
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), d);
+    F::axiom_eqv_symmetric(F::zero(), b);
+    F::axiom_eqv_symmetric(F::zero(), d);
+
+    // Forward: a/b ≤ c/d ⟹ a*d ≤ c*b
+    if a.div(b).le(c.div(d)) {
+        // Multiply both sides by b (positive): (a/b)*b ≤ (c/d)*b
+        F::axiom_le_mul_nonneg_monotone(a.div(b), c.div(d), b);
+        // (a/b)*b ≡ a
+        lemma_div_mul_cancel::<F>(a, b);
+        // (c/d)*b: commute to b*(c/d)
+        F::axiom_mul_commutative(c.div(d), b);
+        // a ≤ b*(c/d)
+        F::axiom_eqv_reflexive(c.div(d).mul(b));
+        F::axiom_le_congruence(a.div(b).mul(b), a, c.div(d).mul(b), c.div(d).mul(b));
+        lemma_le_congruence_right::<F>(a, c.div(d).mul(b), b.mul(c.div(d)));
+
+        // Now multiply both sides of a ≤ b*(c/d) by d (positive): a*d ≤ b*(c/d)*d
+        F::axiom_le_mul_nonneg_monotone(a, b.mul(c.div(d)), d);
+        // b*(c/d)*d ≡ b*((c/d)*d) ≡ b*c
+        F::axiom_mul_associative(b, c.div(d), d);
+        lemma_div_mul_cancel::<F>(c, d);
+        lemma_mul_congruence_right::<F>(b, c.div(d).mul(d), c);
+        F::axiom_eqv_transitive(b.mul(c.div(d)).mul(d), b.mul(c.div(d).mul(d)), b.mul(c));
+        // b*c ≡ c*b
+        F::axiom_mul_commutative(b, c);
+        F::axiom_eqv_transitive(b.mul(c.div(d)).mul(d), b.mul(c), c.mul(b));
+        lemma_le_congruence_right::<F>(a.mul(d), b.mul(c.div(d)).mul(d), c.mul(b));
+    }
+
+    // Backward: a*d ≤ c*b ⟹ a/b ≤ c/d
+    if a.mul(d).le(c.mul(b)) {
+        // Multiply by recip(b): a*d*recip(b) ≤ c*b*recip(b)
+        lemma_recip_pos::<F>(b);
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), b.recip());
+        F::axiom_le_mul_nonneg_monotone(a.mul(d), c.mul(b), b.recip());
+        // c*b*recip(b) ≡ c*(b*recip(b)) ≡ c*1 ≡ c
+        F::axiom_mul_associative(c, b, b.recip());
+        F::axiom_mul_recip_right(b);
+        lemma_mul_congruence_right::<F>(c, b.mul(b.recip()), F::one());
+        F::axiom_mul_one_right(c);
+        F::axiom_eqv_transitive(c.mul(b).mul(b.recip()), c.mul(b.mul(b.recip())), c.mul(F::one()));
+        F::axiom_eqv_transitive(c.mul(b).mul(b.recip()), c.mul(F::one()), c);
+        // a*d*recip(b) ≤ c
+        lemma_le_congruence_right::<F>(a.mul(d).mul(b.recip()), c.mul(b).mul(b.recip()), c);
+
+        // Multiply by recip(d): a*d*recip(b)*recip(d) ≤ c*recip(d)
+        lemma_recip_pos::<F>(d);
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), d.recip());
+        F::axiom_le_mul_nonneg_monotone(a.mul(d).mul(b.recip()), c, d.recip());
+        // c*recip(d) ≡ c/d
+        F::axiom_div_is_mul_recip(c, d);
+        F::axiom_eqv_symmetric(c.div(d), c.mul(d.recip()));
+        lemma_le_congruence_right::<F>(a.mul(d).mul(b.recip()).mul(d.recip()), c.mul(d.recip()), c.div(d));
+
+        // a*d*recip(b)*recip(d) ≡ a*(d*(recip(b)*recip(d)))  [assoc chain]
+        F::axiom_mul_associative(a.mul(d), b.recip(), d.recip());
+        F::axiom_mul_associative(a, d, b.recip().mul(d.recip()));
+        F::axiom_eqv_transitive(
+            a.mul(d).mul(b.recip()).mul(d.recip()),
+            a.mul(d).mul(b.recip().mul(d.recip())),
+            a.mul(d.mul(b.recip().mul(d.recip()))),
+        );
+        // d*(recip(b)*recip(d)) ≡ (d*recip(d))*recip(b)
+        F::axiom_mul_associative(d, b.recip(), d.recip());
+        F::axiom_eqv_symmetric(d.mul(b.recip()).mul(d.recip()), d.mul(b.recip().mul(d.recip())));
+        F::axiom_mul_commutative(b.recip(), d.recip());
+        lemma_mul_congruence_right::<F>(d, b.recip().mul(d.recip()), d.recip().mul(b.recip()));
+        // d*(d.recip()*b.recip()) ≡ (d*d.recip())*b.recip()
+        F::axiom_mul_associative(d, d.recip(), b.recip());
+        F::axiom_eqv_symmetric(d.mul(d.recip()).mul(b.recip()), d.mul(d.recip().mul(b.recip())));
+        F::axiom_eqv_transitive(
+            d.mul(b.recip().mul(d.recip())),
+            d.mul(d.recip().mul(b.recip())),
+            d.mul(d.recip()).mul(b.recip()),
+        );
+        // d*recip(d) ≡ 1
+        F::axiom_mul_recip_right(d);
+        F::axiom_mul_congruence_left(d.mul(d.recip()), F::one(), b.recip());
+        lemma_mul_one_left::<F>(b.recip());
+        F::axiom_eqv_transitive(d.mul(d.recip()).mul(b.recip()), F::one().mul(b.recip()), b.recip());
+        // d*(recip(b)*recip(d)) ≡ recip(b)
+        F::axiom_eqv_transitive(d.mul(b.recip().mul(d.recip())), d.mul(d.recip()).mul(b.recip()), b.recip());
+        // a*(d*(recip(b)*recip(d))) ≡ a*recip(b)
+        lemma_mul_congruence_right::<F>(a, d.mul(b.recip().mul(d.recip())), b.recip());
+        // a*recip(b) ≡ a/b
+        F::axiom_div_is_mul_recip(a, b);
+        F::axiom_eqv_symmetric(a.div(b), a.mul(b.recip()));
+        F::axiom_eqv_transitive(a.mul(d.mul(b.recip().mul(d.recip()))), a.mul(b.recip()), a.div(b));
+        // Chain from original to a/b
+        F::axiom_eqv_transitive(
+            a.mul(d).mul(b.recip()).mul(d.recip()),
+            a.mul(d.mul(b.recip().mul(d.recip()))),
+            a.div(b),
+        );
+        // a/b ≤ c/d via congruence
+        F::axiom_eqv_symmetric(a.mul(d).mul(b.recip()).mul(d.recip()), a.div(b));
+        lemma_le_congruence_left::<F>(a.mul(d).mul(b.recip()).mul(d.recip()), a.div(b), c.div(d));
+    }
+}
+
 } // verus!

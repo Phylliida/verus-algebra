@@ -452,4 +452,36 @@ pub proof fn lemma_add_rearrange_2x2<A: AdditiveGroup>(a: A, b: A, c: A, d: A)
     );
 }
 
+/// If a + e ≡ a for all a (witnessed by a=0), then e ≡ 0.
+/// Specifically: 0 + e ≡ 0 implies e ≡ 0.
+pub proof fn lemma_add_identity_unique<A: AdditiveGroup>(e: A)
+    requires
+        A::zero().add(e).eqv(A::zero()),
+    ensures
+        e.eqv(A::zero()),
+{
+    // 0 + e ≡ e  [add_zero_left]
+    lemma_add_zero_left::<A>(e);
+    // 0 + e ≡ 0  [given]
+    // e ≡ 0 + e ≡ 0
+    A::axiom_eqv_symmetric(A::zero().add(e), e);
+    A::axiom_eqv_transitive(e, A::zero().add(e), A::zero());
+}
+
+/// If a + b ≡ 0, then b ≡ -a.
+pub proof fn lemma_neg_unique<A: AdditiveGroup>(a: A, b: A)
+    requires
+        a.add(b).eqv(A::zero()),
+    ensures
+        b.eqv(a.neg()),
+{
+    // a + (-a) ≡ 0
+    A::axiom_add_inverse_right(a);
+    // a + b ≡ 0 ≡ a + (-a)
+    A::axiom_eqv_symmetric(a.add(a.neg()), A::zero());
+    A::axiom_eqv_transitive(a.add(b), A::zero(), a.add(a.neg()));
+    // By left cancellation: b ≡ -a
+    lemma_add_left_cancel::<A>(b, a.neg(), a);
+}
+
 } // verus!

@@ -643,4 +643,19 @@ pub proof fn lemma_square_sub_expand<R: Ring>(a: R, b: R)
     );
 }
 
+/// If 1 * e ≡ 1, then e ≡ 1.
+pub proof fn lemma_mul_identity_unique<R: Ring>(e: R)
+    requires
+        R::one().mul(e).eqv(R::one()),
+    ensures
+        e.eqv(R::one()),
+{
+    // 1 * e ≡ e  [mul_one_left]
+    lemma_mul_one_left::<R>(e);
+    // 1 * e ≡ 1  [given]
+    // e ≡ 1*e ≡ 1
+    R::axiom_eqv_symmetric(R::one().mul(e), e);
+    R::axiom_eqv_transitive(e, R::one().mul(e), R::one());
+}
+
 } // verus!

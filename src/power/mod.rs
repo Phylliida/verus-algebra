@@ -1,8 +1,11 @@
 use vstd::prelude::*;
 use crate::traits::ring::Ring;
 use crate::traits::ordered_ring::OrderedRing;
+use crate::traits::field::OrderedField;
+use crate::lemmas::additive_group_lemmas::*;
 use crate::lemmas::ring_lemmas::*;
 use crate::lemmas::ordered_ring_lemmas::*;
+use crate::lemmas::ordered_field_lemmas::*;
 
 verus! {
 
@@ -224,6 +227,186 @@ pub proof fn lemma_pow_monotone<R: OrderedRing>(a: R, b: R, n: nat)
             a.mul(pow::<R>(a, (n - 1) as nat)),
             a.mul(pow::<R>(b, (n - 1) as nat)),
             b.mul(pow::<R>(b, (n - 1) as nat)),
+        );
+    }
+}
+
+/// a ≡ b implies pow(a, n) ≡ pow(b, n).
+pub proof fn lemma_pow_eqv<R: Ring>(a: R, b: R, n: nat)
+    requires
+        a.eqv(b),
+    ensures
+        pow::<R>(a, n).eqv(pow::<R>(b, n)),
+    decreases n,
+{
+    if n == 0 {
+        R::axiom_eqv_reflexive(R::one());
+    } else {
+        // IH: pow(a, n-1) ≡ pow(b, n-1)
+        lemma_pow_eqv::<R>(a, b, (n - 1) as nat);
+        // a ≡ b and pow(a,n-1) ≡ pow(b,n-1)
+        // a * pow(a,n-1) ≡ b * pow(b,n-1) [mul_congruence]
+        lemma_mul_congruence::<R>(a, b, pow::<R>(a, (n - 1) as nat), pow::<R>(b, (n - 1) as nat));
+    }
+}
+
+/// 0 < a implies 0 < pow(a, n) (for OrderedField).
+pub proof fn lemma_pow_pos<F: OrderedField>(a: F, n: nat)
+    requires
+        F::zero().lt(a),
+    ensures
+        F::zero().lt(pow::<F>(a, n)),
+    decreases n,
+{
+    if n == 0 {
+        // pow(a, 0) = 1, 0 < 1
+        lemma_zero_lt_one::<F>();
+    } else {
+        // IH: 0 < pow(a, n-1)
+        lemma_pow_pos::<F>(a, (n - 1) as nat);
+        // 0 < a and 0 < pow(a, n-1) → 0 < a * pow(a, n-1)
+        lemma_mul_pos_pos::<F>(a, pow::<F>(a, (n - 1) as nat));
+    }
+}
+
+/// pow(a*b, n) ≡ pow(a, n) * pow(b, n).
+pub proof fn lemma_pow_mul_base<R: Ring>(a: R, b: R, n: nat)
+    ensures
+        pow::<R>(a.mul(b), n).eqv(pow::<R>(a, n).mul(pow::<R>(b, n))),
+    decreases n,
+{
+    if n == 0 {
+        // pow(a*b, 0) = 1, pow(a,0)*pow(b,0) = 1*1 ≡ 1
+        R::axiom_mul_one_right(R::one());
+        R::axiom_eqv_symmetric(R::one().mul(R::one()), R::one());
+    } else {
+        // pow(a*b, n) = (a*b) * pow(a*b, n-1)
+        // IH: pow(a*b, n-1) ≡ pow(a,n-1)*pow(b,n-1)
+        lemma_pow_mul_base::<R>(a, b, (n - 1) as nat);
+
+        // (a*b)*pow(a*b,n-1) ≡ (a*b)*(pow(a,n-1)*pow(b,n-1))
+        lemma_mul_congruence_right::<R>(
+            a.mul(b),
+            pow::<R>(a.mul(b), (n - 1) as nat),
+            pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat)),
+        );
+
+        // (a*b)*(pow(a,n-1)*pow(b,n-1))
+        // ≡ a*(b*(pow(a,n-1)*pow(b,n-1)))    [assoc]
+        R::axiom_mul_associative(a, b, pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat)));
+        R::axiom_eqv_transitive(
+            a.mul(b).mul(pow::<R>(a.mul(b), (n - 1) as nat)),
+            a.mul(b).mul(pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat))),
+            a.mul(b.mul(pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat)))),
+        );
+
+        // b*(pow(a,n-1)*pow(b,n-1))
+        // ≡ (b*pow(a,n-1))*pow(b,n-1)    [assoc reversed]
+        R::axiom_mul_associative(b, pow::<R>(a, (n - 1) as nat), pow::<R>(b, (n - 1) as nat));
+        R::axiom_eqv_symmetric(
+            b.mul(pow::<R>(a, (n - 1) as nat)).mul(pow::<R>(b, (n - 1) as nat)),
+            b.mul(pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat))),
+        );
+        // b*pow(a,n-1) ≡ pow(a,n-1)*b     [comm]
+        R::axiom_mul_commutative(b, pow::<R>(a, (n - 1) as nat));
+        // (b*pow(a,n-1))*pow(b,n-1) ≡ (pow(a,n-1)*b)*pow(b,n-1)
+        R::axiom_mul_congruence_left(
+            b.mul(pow::<R>(a, (n - 1) as nat)),
+            pow::<R>(a, (n - 1) as nat).mul(b),
+            pow::<R>(b, (n - 1) as nat),
+        );
+        // (pow(a,n-1)*b)*pow(b,n-1) ≡ pow(a,n-1)*(b*pow(b,n-1))   [assoc]
+        R::axiom_mul_associative(pow::<R>(a, (n - 1) as nat), b, pow::<R>(b, (n - 1) as nat));
+
+        // Chain: b*(pow(a,n-1)*pow(b,n-1)) ≡ (b*pow(a,n-1))*pow(b,n-1)
+        //        ≡ (pow(a,n-1)*b)*pow(b,n-1) ≡ pow(a,n-1)*(b*pow(b,n-1))
+        R::axiom_eqv_transitive(
+            b.mul(pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat))),
+            b.mul(pow::<R>(a, (n - 1) as nat)).mul(pow::<R>(b, (n - 1) as nat)),
+            pow::<R>(a, (n - 1) as nat).mul(b).mul(pow::<R>(b, (n - 1) as nat)),
+        );
+        R::axiom_eqv_transitive(
+            b.mul(pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat))),
+            pow::<R>(a, (n - 1) as nat).mul(b).mul(pow::<R>(b, (n - 1) as nat)),
+            pow::<R>(a, (n - 1) as nat).mul(b.mul(pow::<R>(b, (n - 1) as nat))),
+        );
+
+        // a*(b*(pow(a,n-1)*pow(b,n-1))) ≡ a*(pow(a,n-1)*(b*pow(b,n-1)))
+        lemma_mul_congruence_right::<R>(
+            a,
+            b.mul(pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat))),
+            pow::<R>(a, (n - 1) as nat).mul(b.mul(pow::<R>(b, (n - 1) as nat))),
+        );
+        R::axiom_eqv_transitive(
+            a.mul(b).mul(pow::<R>(a.mul(b), (n - 1) as nat)),
+            a.mul(b.mul(pow::<R>(a, (n - 1) as nat).mul(pow::<R>(b, (n - 1) as nat)))),
+            a.mul(pow::<R>(a, (n - 1) as nat).mul(b.mul(pow::<R>(b, (n - 1) as nat)))),
+        );
+
+        // a*(pow(a,n-1)*(b*pow(b,n-1))) ≡ (a*pow(a,n-1))*(b*pow(b,n-1))   [assoc reversed]
+        R::axiom_mul_associative(a, pow::<R>(a, (n - 1) as nat), b.mul(pow::<R>(b, (n - 1) as nat)));
+        R::axiom_eqv_symmetric(
+            a.mul(pow::<R>(a, (n - 1) as nat)).mul(b.mul(pow::<R>(b, (n - 1) as nat))),
+            a.mul(pow::<R>(a, (n - 1) as nat).mul(b.mul(pow::<R>(b, (n - 1) as nat)))),
+        );
+        R::axiom_eqv_transitive(
+            a.mul(b).mul(pow::<R>(a.mul(b), (n - 1) as nat)),
+            a.mul(pow::<R>(a, (n - 1) as nat).mul(b.mul(pow::<R>(b, (n - 1) as nat)))),
+            a.mul(pow::<R>(a, (n - 1) as nat)).mul(b.mul(pow::<R>(b, (n - 1) as nat))),
+        );
+        // pow(a,n) = a*pow(a,n-1) and pow(b,n) = b*pow(b,n-1) — these are definitional equalities
+    }
+}
+
+/// pow((-1), 2*n) ≡ 1.
+pub proof fn lemma_pow_neg_one_even<R: Ring>(n: nat)
+    ensures
+        pow::<R>(R::one().neg(), 2 * n).eqv(R::one()),
+    decreases n,
+{
+    if n == 0 {
+        R::axiom_eqv_reflexive(R::one());
+    } else {
+        // IH: pow(-1, 2*(n-1)) ≡ 1
+        lemma_pow_neg_one_even::<R>((n - 1) as nat);
+        let n1: nat = (n - 1) as nat;
+        // 2*n = 2 + 2*n1
+        assert(2 * n == 2 + 2 * n1) by(nonlinear_arith)
+            requires n == n1 + 1
+        ;
+        // pow(-1, 2+2*n1) ≡ pow(-1,2) * pow(-1, 2*n1)  [pow_add]
+        lemma_pow_add::<R>(R::one().neg(), 2, 2 * n1);
+        // pow(-1, 2) ≡ (-1)*(-1)
+        lemma_pow_two::<R>(R::one().neg());
+        // (-1)*(-1) ≡ 1*1  [neg_mul_neg]
+        lemma_neg_mul_neg::<R>(R::one(), R::one());
+        // 1*1 ≡ 1
+        R::axiom_mul_one_right(R::one());
+        // pow(-1,2) ≡ (-1)*(-1) ≡ 1*1 ≡ 1
+        R::axiom_eqv_transitive(
+            pow::<R>(R::one().neg(), 2),
+            R::one().neg().mul(R::one().neg()),
+            R::one().mul(R::one()),
+        );
+        R::axiom_eqv_transitive(
+            pow::<R>(R::one().neg(), 2),
+            R::one().mul(R::one()),
+            R::one(),
+        );
+        // pow(-1,2) * pow(-1, 2*n1) ≡ 1 * 1 ≡ 1
+        lemma_mul_congruence::<R>(
+            pow::<R>(R::one().neg(), 2), R::one(),
+            pow::<R>(R::one().neg(), 2 * n1), R::one(),
+        );
+        R::axiom_eqv_transitive(
+            pow::<R>(R::one().neg(), 2 * n),
+            pow::<R>(R::one().neg(), 2).mul(pow::<R>(R::one().neg(), 2 * n1)),
+            R::one().mul(R::one()),
+        );
+        R::axiom_eqv_transitive(
+            pow::<R>(R::one().neg(), 2 * n),
+            R::one().mul(R::one()),
+            R::one(),
         );
     }
 }

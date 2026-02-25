@@ -6,6 +6,7 @@ use crate::lemmas::ring_lemmas::*;
 use crate::lemmas::ordered_ring_lemmas::*;
 use crate::lemmas::field_lemmas::*;
 use crate::lemmas::ordered_field_lemmas::*;
+use crate::convex::two;
 
 verus! {
 
@@ -764,6 +765,189 @@ pub proof fn lemma_signum_mul<F: OrderedField>(a: F, b: F)
         F::axiom_mul_one_right(F::one());
         F::axiom_eqv_transitive(F::one().neg().mul(F::one().neg()), F::one().mul(F::one()), F::one());
         F::axiom_eqv_symmetric(F::one().neg().mul(F::one().neg()), F::one());
+    }
+}
+
+/// AM-GM inequality: 0 ≤ a and 0 ≤ b implies a*b ≤ (a*a + b*b) / two().
+pub proof fn lemma_am_gm<F: OrderedField>(a: F, b: F)
+    requires
+        F::zero().le(a),
+        F::zero().le(b),
+    ensures
+        a.mul(b).le(a.mul(a).add(b.mul(b)).div(two::<F>())),
+{
+    // 0 ≤ (a-b)^2 = a^2 - 2*a*b + b^2
+    lemma_square_nonneg::<F>(a.sub(b));
+    // (a-b)*(a-b) ≡ a*a - (1+1)*a*b + b*b
+    lemma_square_sub_expand::<F>(a, b);
+    // 0 ≤ (a-b)*(a-b) ≡ a*a - (1+1)*a*b + b*b
+    lemma_le_congruence_right::<F>(F::zero(), a.sub(b).mul(a.sub(b)), a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b)));
+
+    // Rearrange: 0 ≤ a^2 - 2ab + b^2 → 2ab ≤ a^2 + b^2
+    // a^2 - 2ab + b^2 + 2ab ≡ a^2 + b^2 (via cancellation)
+    // First: (a^2 - 2ab) + 2ab ≡ a^2 (sub_then_add_cancel)
+    lemma_sub_then_add_cancel::<F>(a.mul(a), two::<F>().mul(a.mul(b)));
+    // (a^2 - 2ab + b^2) + 2ab ≡ ((a^2 - 2ab) + 2ab) + b^2... no, let's be more direct.
+    // 0 ≤ a^2 - 2ab + b^2
+    // Add 2ab to both sides: 2ab ≤ a^2 - 2ab + b^2 + 2ab
+    F::axiom_le_add_monotone(F::zero(), a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b)), two::<F>().mul(a.mul(b)));
+    // LHS: 0 + 2ab ≡ 2ab
+    lemma_add_zero_left::<F>(two::<F>().mul(a.mul(b)));
+    lemma_le_congruence_left::<F>(
+        F::zero().add(two::<F>().mul(a.mul(b))),
+        two::<F>().mul(a.mul(b)),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b)).add(two::<F>().mul(a.mul(b))),
+    );
+
+    // RHS: (a^2 - 2ab + b^2) + 2ab ≡ (a^2 - 2ab) + (b^2 + 2ab)  [assoc]
+    F::axiom_add_associative(a.mul(a).sub(two::<F>().mul(a.mul(b))), b.mul(b), two::<F>().mul(a.mul(b)));
+    // b^2 + 2ab ≡ 2ab + b^2  [comm]
+    F::axiom_add_commutative(b.mul(b), two::<F>().mul(a.mul(b)));
+    // (a^2 - 2ab) + (2ab + b^2) [assoc inner reversed to get (a^2-2ab+2ab)+b^2]
+    lemma_add_congruence_right::<F>(
+        a.mul(a).sub(two::<F>().mul(a.mul(b))),
+        b.mul(b).add(two::<F>().mul(a.mul(b))),
+        two::<F>().mul(a.mul(b)).add(b.mul(b)),
+    );
+    F::axiom_eqv_transitive(
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b)).add(two::<F>().mul(a.mul(b))),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b).add(two::<F>().mul(a.mul(b)))),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(two::<F>().mul(a.mul(b)).add(b.mul(b))),
+    );
+
+    // (a^2-2ab) + (2ab + b^2) ≡ ((a^2-2ab)+2ab) + b^2  [assoc reversed]
+    F::axiom_add_associative(a.mul(a).sub(two::<F>().mul(a.mul(b))), two::<F>().mul(a.mul(b)), b.mul(b));
+    F::axiom_eqv_symmetric(
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(two::<F>().mul(a.mul(b))).add(b.mul(b)),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(two::<F>().mul(a.mul(b)).add(b.mul(b))),
+    );
+    F::axiom_eqv_transitive(
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b)).add(two::<F>().mul(a.mul(b))),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(two::<F>().mul(a.mul(b)).add(b.mul(b))),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(two::<F>().mul(a.mul(b))).add(b.mul(b)),
+    );
+
+    // (a^2-2ab)+2ab ≡ a^2  [sub_then_add_cancel]
+    F::axiom_add_congruence_left(
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(two::<F>().mul(a.mul(b))),
+        a.mul(a),
+        b.mul(b),
+    );
+    F::axiom_eqv_transitive(
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b)).add(two::<F>().mul(a.mul(b))),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(two::<F>().mul(a.mul(b))).add(b.mul(b)),
+        a.mul(a).add(b.mul(b)),
+    );
+
+    // So: 2ab ≤ a^2 + b^2
+    lemma_le_congruence_right::<F>(
+        two::<F>().mul(a.mul(b)),
+        a.mul(a).sub(two::<F>().mul(a.mul(b))).add(b.mul(b)).add(two::<F>().mul(a.mul(b))),
+        a.mul(a).add(b.mul(b)),
+    );
+
+    // Now divide by 2: 2 > 0, so ab ≤ (a^2+b^2)/2
+    // 2ab ≤ a^2+b^2 and 0 < 2 → 2ab/2 ≤ (a^2+b^2)/2
+    lemma_zero_lt_one::<F>();
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), F::one());
+    lemma_add_nonneg_pos::<F>(F::one(), F::one());
+    // 0 < two()
+
+    lemma_le_div_monotone::<F>(two::<F>().mul(a.mul(b)), a.mul(a).add(b.mul(b)), two::<F>());
+
+    // 2*ab / 2 ≡ ab
+    F::axiom_eqv_symmetric(F::zero(), two::<F>());
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), two::<F>());
+    lemma_mul_div_cancel::<F>(a.mul(b), two::<F>());
+    // 2*ab ≡ ab*2... actually mul_div_cancel gives (ab*2)/2 ≡ ab
+    // We need (2*ab)/2 ≡ ab. Use commutativity.
+    F::axiom_mul_commutative(two::<F>(), a.mul(b));
+    // 2*ab ≡ ab*2
+    // (2*ab)/2 ≡ (ab*2)/2  [div congruence... need to go through div_is_mul_recip]
+    F::axiom_div_is_mul_recip(two::<F>().mul(a.mul(b)), two::<F>());
+    F::axiom_div_is_mul_recip(a.mul(b).mul(two::<F>()), two::<F>());
+    F::axiom_mul_congruence_left(two::<F>().mul(a.mul(b)), a.mul(b).mul(two::<F>()), two::<F>().recip());
+    F::axiom_eqv_symmetric(a.mul(b).mul(two::<F>()).div(two::<F>()), a.mul(b).mul(two::<F>()).mul(two::<F>().recip()));
+    F::axiom_eqv_transitive(
+        two::<F>().mul(a.mul(b)).mul(two::<F>().recip()),
+        a.mul(b).mul(two::<F>()).mul(two::<F>().recip()),
+        a.mul(b).mul(two::<F>()).div(two::<F>()),
+    );
+    F::axiom_eqv_symmetric(two::<F>().mul(a.mul(b)).div(two::<F>()), two::<F>().mul(a.mul(b)).mul(two::<F>().recip()));
+    F::axiom_eqv_transitive(
+        two::<F>().mul(a.mul(b)).div(two::<F>()),
+        two::<F>().mul(a.mul(b)).mul(two::<F>().recip()),
+        a.mul(b).mul(two::<F>()).div(two::<F>()),
+    );
+    // (ab*2)/2 ≡ ab
+    F::axiom_eqv_transitive(two::<F>().mul(a.mul(b)).div(two::<F>()), a.mul(b).mul(two::<F>()).div(two::<F>()), a.mul(b));
+
+    // ab ≡ (2*ab)/2 ≤ (a^2+b^2)/2
+    F::axiom_eqv_symmetric(two::<F>().mul(a.mul(b)).div(two::<F>()), a.mul(b));
+    lemma_le_congruence_left::<F>(
+        two::<F>().mul(a.mul(b)).div(two::<F>()),
+        a.mul(b),
+        a.mul(a).add(b.mul(b)).div(two::<F>()),
+    );
+}
+
+/// abs(a) * abs(a) ≡ a * a.
+pub proof fn lemma_abs_mul_self<R: OrderedRing>(a: R)
+    ensures
+        abs::<R>(a).mul(abs::<R>(a)).eqv(a.mul(a)),
+{
+    R::axiom_le_total(R::zero(), a);
+    if R::zero().le(a) {
+        // abs(a) = a, trivial
+        R::axiom_eqv_reflexive(a.mul(a));
+    } else {
+        // abs(a) = -a
+        // (-a)*(-a) ≡ a*a [neg_mul_neg]
+        lemma_neg_mul_neg::<R>(a, a);
+    }
+}
+
+/// 0 < abs(a) if and only if ¬(a ≡ 0).
+pub proof fn lemma_abs_pos_iff<R: OrderedRing>(a: R)
+    ensures
+        R::zero().lt(abs::<R>(a)) == !a.eqv(R::zero()),
+{
+    R::axiom_le_total(R::zero(), a);
+    R::axiom_lt_iff_le_and_not_eqv(R::zero(), abs::<R>(a));
+
+    if R::zero().le(a) {
+        // abs(a) = a
+        // 0 < a ⟺ ¬(a ≡ 0): 0 < a means 0 ≤ a ∧ ¬(0 ≡ a)
+        R::axiom_lt_iff_le_and_not_eqv(R::zero(), a);
+        R::axiom_eqv_symmetric(R::zero(), a);
+        // 0 < abs(a) = 0 < a = (0 ≤ a ∧ ¬(a ≡ 0))
+        // And ¬(a ≡ 0) is what we want
+    } else {
+        // abs(a) = -a
+        // a < 0 (since ¬(0 ≤ a) and totality gives a ≤ 0)
+        // ¬(a ≡ 0): if a ≡ 0 then 0 ≤ a via congruence, contradiction
+        if a.eqv(R::zero()) {
+            R::axiom_le_reflexive(R::zero());
+            R::axiom_eqv_symmetric(a, R::zero());
+            lemma_le_congruence_right::<R>(R::zero(), R::zero(), a);
+        }
+        // 0 ≤ -a: from neg_nonpos_iff or directly from a < 0
+        lemma_neg_nonpos_iff::<R>(a);
+        // Need !0.eqv(-a)
+        R::axiom_eqv_symmetric(R::zero(), a.neg());
+        if a.neg().eqv(R::zero()) {
+            // -a ≡ 0 implies --a ≡ -0 ≡ 0, i.e. a ≡ 0
+            R::axiom_neg_congruence(a.neg(), R::zero());
+            lemma_neg_involution::<R>(a);
+            lemma_neg_zero::<R>();
+            R::axiom_eqv_symmetric(a.neg().neg(), a);
+            R::axiom_eqv_transitive(a, a.neg().neg(), R::zero().neg());
+            R::axiom_eqv_transitive(a, R::zero().neg(), R::zero());
+            // But a ≡ 0 contradicts ¬(0 ≤ a)
+            R::axiom_le_reflexive(R::zero());
+            R::axiom_eqv_symmetric(a, R::zero());
+            lemma_le_congruence_right::<R>(R::zero(), R::zero(), a);
+        }
     }
 }
 

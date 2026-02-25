@@ -589,4 +589,31 @@ pub proof fn lemma_lt_add_both<R: OrderedRing>(a: R, b: R, c: R, d: R)
     lemma_lt_transitive::<R>(a.add(c), b.add(c), b.add(d));
 }
 
+/// 0 ≤ a ≤ b implies a*a ≤ b*b.
+pub proof fn lemma_square_le_square<R: OrderedRing>(a: R, b: R)
+    requires
+        R::zero().le(a),
+        a.le(b),
+    ensures
+        a.mul(a).le(b.mul(b)),
+{
+    // Step 1: a*a ≤ b*a (from a ≤ b and 0 ≤ a)
+    R::axiom_le_mul_nonneg_monotone(a, b, a);
+    // Commute: a*a and b*a to get our terms
+    // Actually axiom gives a*a ≤ b*a directly (a ≤ b, 0 ≤ a)
+
+    // Step 2: a*b ≤ b*b (from a ≤ b and 0 ≤ b)
+    R::axiom_le_transitive(R::zero(), a, b);
+    R::axiom_le_mul_nonneg_monotone(a, b, b);
+    // This gives a*b ≤ b*b
+
+    // b*a ≡ a*b
+    R::axiom_mul_commutative(b, a);
+    // a*a ≤ b*a ≡ a*b ≤ b*b
+    R::axiom_eqv_reflexive(a.mul(a));
+    R::axiom_le_congruence(a.mul(a), a.mul(a), b.mul(a), a.mul(b));
+    // a*a ≤ a*b ≤ b*b
+    R::axiom_le_transitive(a.mul(a), a.mul(b), b.mul(b));
+}
+
 } // verus!
