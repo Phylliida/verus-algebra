@@ -476,4 +476,79 @@ pub proof fn lemma_neg_unique<A: AdditiveGroup>(a: A, b: A)
     lemma_add_left_cancel::<A>(b, a.neg(), a);
 }
 
+/// Negation respects equivalence: a ≡ b implies -a ≡ -b.
+/// Convenience wrapper around axiom_neg_congruence.
+pub proof fn lemma_neg_congruence<A: AdditiveGroup>(a: A, b: A)
+    requires
+        a.eqv(b),
+    ensures
+        a.neg().eqv(b.neg()),
+{
+    A::axiom_neg_congruence(a, b);
+}
+
+/// Telescoping subtraction: (a - b) + (b - c) ≡ a - c.
+pub proof fn lemma_sub_add_sub<A: AdditiveGroup>(a: A, b: A, c: A)
+    ensures
+        a.sub(b).add(b.sub(c)).eqv(a.sub(c)),
+{
+    // Expand subs: (a - b) ≡ a + (-b), (b - c) ≡ b + (-c)
+    A::axiom_sub_is_add_neg(a, b);
+    A::axiom_sub_is_add_neg(b, c);
+    A::axiom_sub_is_add_neg(a, c);
+
+    // (a-b) + (b-c) ≡ (a+(-b)) + (b+(-c))
+    lemma_add_congruence::<A>(a.sub(b), a.add(b.neg()), b.sub(c), b.add(c.neg()));
+
+    // (a+(-b)) + (b+(-c)) ≡ a + ((-b) + (b + (-c)))   [assoc]
+    A::axiom_add_associative(a, b.neg(), b.add(c.neg()));
+
+    // (-b) + (b + (-c)) ≡ ((-b) + b) + (-c)            [assoc reversed]
+    A::axiom_add_associative(b.neg(), b, c.neg());
+    A::axiom_eqv_symmetric(b.neg().add(b).add(c.neg()), b.neg().add(b.add(c.neg())));
+
+    // (-b) + b ≡ 0
+    lemma_add_inverse_left::<A>(b);
+    // ((-b)+b)+(-c) ≡ 0+(-c)
+    A::axiom_add_congruence_left(b.neg().add(b), A::zero(), c.neg());
+    // 0+(-c) ≡ -c
+    lemma_add_zero_left::<A>(c.neg());
+    // Chain: (-b)+(b+(-c)) ≡ ((-b)+b)+(-c) ≡ 0+(-c) ≡ -c
+    A::axiom_eqv_transitive(
+        b.neg().add(b.add(c.neg())),
+        b.neg().add(b).add(c.neg()),
+        A::zero().add(c.neg()),
+    );
+    A::axiom_eqv_transitive(
+        b.neg().add(b.add(c.neg())),
+        A::zero().add(c.neg()),
+        c.neg(),
+    );
+
+    // a + ((-b)+(b+(-c))) ≡ a + (-c)
+    lemma_add_congruence_right::<A>(a, b.neg().add(b.add(c.neg())), c.neg());
+
+    // Chain: (a+(-b))+(b+(-c)) ≡ a+((-b)+(b+(-c))) ≡ a+(-c)
+    A::axiom_eqv_transitive(
+        a.add(b.neg()).add(b.add(c.neg())),
+        a.add(b.neg().add(b.add(c.neg()))),
+        a.add(c.neg()),
+    );
+
+    // (a-b)+(b-c) ≡ (a+(-b))+(b+(-c)) ≡ a+(-c)
+    A::axiom_eqv_transitive(
+        a.sub(b).add(b.sub(c)),
+        a.add(b.neg()).add(b.add(c.neg())),
+        a.add(c.neg()),
+    );
+
+    // a+(-c) ≡ a-c (symmetric of sub_is_add_neg)
+    A::axiom_eqv_symmetric(a.sub(c), a.add(c.neg()));
+    A::axiom_eqv_transitive(
+        a.sub(b).add(b.sub(c)),
+        a.add(c.neg()),
+        a.sub(c),
+    );
+}
+
 } // verus!

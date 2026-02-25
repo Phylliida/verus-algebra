@@ -600,4 +600,172 @@ pub proof fn lemma_div_mul_div<F: Field>(a: F, b: F, c: F, d: F)
     );
 }
 
+/// Reciprocal respects equivalence: a ≡ b and a ≢ 0 implies recip(a) ≡ recip(b).
+/// Convenience wrapper around axiom_recip_congruence.
+pub proof fn lemma_recip_congruence<F: Field>(a: F, b: F)
+    requires
+        a.eqv(b),
+        !a.eqv(F::zero()),
+    ensures
+        a.recip().eqv(b.recip()),
+{
+    F::axiom_recip_congruence(a, b);
+}
+
+/// a/b + c/d ≡ (a*d + c*b) / (b*d) for nonzero b, d.
+pub proof fn lemma_div_add_div<F: Field>(a: F, b: F, c: F, d: F)
+    requires
+        !b.eqv(F::zero()),
+        !d.eqv(F::zero()),
+    ensures
+        a.div(b).add(c.div(d)).eqv(a.mul(d).add(c.mul(b)).div(b.mul(d))),
+{
+    // RHS: (a*d + c*b) / (b*d) ≡ (a*d + c*b) * recip(b*d)
+    lemma_nonzero_product::<F>(b, d);
+    F::axiom_div_is_mul_recip(a.mul(d).add(c.mul(b)), b.mul(d));
+
+    // recip(b*d) ≡ recip(b) * recip(d)
+    lemma_recip_mul::<F>(b, d);
+    F::axiom_eqv_symmetric(b.mul(d).recip(), b.recip().mul(d.recip()));
+
+    // (a*d+c*b) * recip(b*d) ≡ (a*d+c*b) * (recip(b)*recip(d))
+    lemma_mul_congruence_right::<F>(
+        a.mul(d).add(c.mul(b)),
+        b.mul(d).recip(),
+        b.recip().mul(d.recip()),
+    );
+    F::axiom_eqv_transitive(
+        a.mul(d).add(c.mul(b)).div(b.mul(d)),
+        a.mul(d).add(c.mul(b)).mul(b.mul(d).recip()),
+        a.mul(d).add(c.mul(b)).mul(b.recip().mul(d.recip())),
+    );
+
+    // Distribute: (a*d+c*b) * (recip(b)*recip(d)) ≡ a*d*(recip(b)*recip(d)) + c*b*(recip(b)*recip(d))
+    lemma_mul_distributes_right::<F>(a.mul(d), c.mul(b), b.recip().mul(d.recip()));
+    F::axiom_eqv_transitive(
+        a.mul(d).add(c.mul(b)).div(b.mul(d)),
+        a.mul(d).add(c.mul(b)).mul(b.recip().mul(d.recip())),
+        a.mul(d).mul(b.recip().mul(d.recip())).add(c.mul(b).mul(b.recip().mul(d.recip()))),
+    );
+
+    // Term 1: a*d*(recip(b)*recip(d))
+    // ≡ a*(d*(recip(b)*recip(d)))  [assoc]
+    F::axiom_mul_associative(a, d, b.recip().mul(d.recip()));
+    // d*(recip(b)*recip(d)) ≡ (d*recip(b))*recip(d)  [assoc reversed]
+    // ≡ (recip(b)*d)*recip(d)  [comm]
+    // ≡ recip(b)*(d*recip(d))  [assoc]
+    // ≡ recip(b)*1  [mul_recip_right]
+    // ≡ recip(b)
+    F::axiom_mul_associative(d, b.recip(), d.recip());
+    F::axiom_eqv_symmetric(d.mul(b.recip()).mul(d.recip()), d.mul(b.recip().mul(d.recip())));
+    F::axiom_mul_commutative(d, b.recip());
+    F::axiom_mul_congruence_left(d.mul(b.recip()), b.recip().mul(d), d.recip());
+    F::axiom_mul_associative(b.recip(), d, d.recip());
+    F::axiom_mul_recip_right(d);
+    lemma_mul_congruence_right::<F>(b.recip(), d.mul(d.recip()), F::one());
+    F::axiom_mul_one_right(b.recip());
+    // Chain: (d*recip(b))*recip(d) ≡ (recip(b)*d)*recip(d) ≡ recip(b)*(d*recip(d)) ≡ recip(b)*1 ≡ recip(b)
+    F::axiom_eqv_transitive(
+        d.mul(b.recip()).mul(d.recip()),
+        b.recip().mul(d).mul(d.recip()),
+        b.recip().mul(d.mul(d.recip())),
+    );
+    F::axiom_eqv_transitive(
+        d.mul(b.recip()).mul(d.recip()),
+        b.recip().mul(d.mul(d.recip())),
+        b.recip().mul(F::one()),
+    );
+    F::axiom_eqv_transitive(
+        d.mul(b.recip()).mul(d.recip()),
+        b.recip().mul(F::one()),
+        b.recip(),
+    );
+    // d*(recip(b)*recip(d)) ≡ (d*recip(b))*recip(d) ≡ recip(b)
+    F::axiom_eqv_transitive(
+        d.mul(b.recip().mul(d.recip())),
+        d.mul(b.recip()).mul(d.recip()),
+        b.recip(),
+    );
+
+    // a*(d*(recip(b)*recip(d))) ≡ a*recip(b)
+    lemma_mul_congruence_right::<F>(a, d.mul(b.recip().mul(d.recip())), b.recip());
+    // a*d*(recip(b)*recip(d)) ≡ a*(d*(recip(b)*recip(d))) ≡ a*recip(b)
+    F::axiom_eqv_transitive(
+        a.mul(d).mul(b.recip().mul(d.recip())),
+        a.mul(d.mul(b.recip().mul(d.recip()))),
+        a.mul(b.recip()),
+    );
+
+    // a*recip(b) ≡ a/b
+    F::axiom_div_is_mul_recip(a, b);
+    F::axiom_eqv_symmetric(a.div(b), a.mul(b.recip()));
+    F::axiom_eqv_transitive(
+        a.mul(d).mul(b.recip().mul(d.recip())),
+        a.mul(b.recip()),
+        a.div(b),
+    );
+
+    // Term 2: c*b*(recip(b)*recip(d))
+    // ≡ c*(b*(recip(b)*recip(d)))  [assoc]
+    F::axiom_mul_associative(c, b, b.recip().mul(d.recip()));
+    // b*(recip(b)*recip(d)) ≡ (b*recip(b))*recip(d)  [assoc reversed]
+    F::axiom_mul_associative(b, b.recip(), d.recip());
+    F::axiom_eqv_symmetric(b.mul(b.recip()).mul(d.recip()), b.mul(b.recip().mul(d.recip())));
+    // b*recip(b) ≡ 1
+    F::axiom_mul_recip_right(b);
+    // (b*recip(b))*recip(d) ≡ 1*recip(d) ≡ recip(d)
+    F::axiom_mul_congruence_left(b.mul(b.recip()), F::one(), d.recip());
+    lemma_mul_one_left::<F>(d.recip());
+    F::axiom_eqv_transitive(
+        b.mul(b.recip()).mul(d.recip()),
+        F::one().mul(d.recip()),
+        d.recip(),
+    );
+    // b*(recip(b)*recip(d)) ≡ recip(d)
+    F::axiom_eqv_transitive(
+        b.mul(b.recip().mul(d.recip())),
+        b.mul(b.recip()).mul(d.recip()),
+        d.recip(),
+    );
+
+    // c*(b*(recip(b)*recip(d))) ≡ c*recip(d)
+    lemma_mul_congruence_right::<F>(c, b.mul(b.recip().mul(d.recip())), d.recip());
+    // c*b*(recip(b)*recip(d)) ≡ c*(b*(recip(b)*recip(d))) ≡ c*recip(d)
+    F::axiom_eqv_transitive(
+        c.mul(b).mul(b.recip().mul(d.recip())),
+        c.mul(b.mul(b.recip().mul(d.recip()))),
+        c.mul(d.recip()),
+    );
+
+    // c*recip(d) ≡ c/d
+    F::axiom_div_is_mul_recip(c, d);
+    F::axiom_eqv_symmetric(c.div(d), c.mul(d.recip()));
+    F::axiom_eqv_transitive(
+        c.mul(b).mul(b.recip().mul(d.recip())),
+        c.mul(d.recip()),
+        c.div(d),
+    );
+
+    // Combine terms: term1 + term2 ≡ a/b + c/d
+    lemma_add_congruence::<F>(
+        a.mul(d).mul(b.recip().mul(d.recip())),
+        a.div(b),
+        c.mul(b).mul(b.recip().mul(d.recip())),
+        c.div(d),
+    );
+
+    // RHS ≡ term1 + term2 ≡ a/b + c/d
+    F::axiom_eqv_transitive(
+        a.mul(d).add(c.mul(b)).div(b.mul(d)),
+        a.mul(d).mul(b.recip().mul(d.recip())).add(c.mul(b).mul(b.recip().mul(d.recip()))),
+        a.div(b).add(c.div(d)),
+    );
+
+    // Flip: a/b + c/d ≡ RHS
+    F::axiom_eqv_symmetric(
+        a.mul(d).add(c.mul(b)).div(b.mul(d)),
+        a.div(b).add(c.div(d)),
+    );
+}
+
 } // verus!

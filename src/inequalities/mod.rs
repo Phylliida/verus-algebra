@@ -1,4 +1,5 @@
 use vstd::prelude::*;
+use crate::traits::ring::Ring;
 use crate::traits::ordered_ring::OrderedRing;
 use crate::traits::field::OrderedField;
 use crate::lemmas::additive_group_lemmas::*;
@@ -949,6 +950,573 @@ pub proof fn lemma_abs_pos_iff<R: OrderedRing>(a: R)
             lemma_le_congruence_right::<R>(R::zero(), R::zero(), a);
         }
     }
+}
+
+/// a*a + b*b ≡ 0 implies a ≡ 0 and b ≡ 0 (for OrderedField).
+pub proof fn lemma_sum_squares_zero_2d<F: OrderedField>(a: F, b: F)
+    requires
+        a.mul(a).add(b.mul(b)).eqv(F::zero()),
+    ensures
+        a.eqv(F::zero()),
+        b.eqv(F::zero()),
+{
+    // 0 ≤ a² and 0 ≤ b²
+    lemma_square_nonneg::<F>(a);
+    lemma_square_nonneg::<F>(b);
+
+    // If a² > 0, then a² + b² > 0 (by add_pos_nonneg), contradicting a²+b² ≡ 0
+    // So a² ≡ 0.
+    // Establish a² ≡ 0: if ¬(a² ≡ 0), then 0 < a² (from 0 ≤ a² and ¬(0 ≡ a²))
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), a.mul(a));
+    F::axiom_eqv_symmetric(F::zero(), a.mul(a));
+    if !a.mul(a).eqv(F::zero()) {
+        // 0 < a²
+        lemma_add_pos_nonneg::<F>(a.mul(a), b.mul(b));
+        // 0 < a² + b², but a²+b² ≡ 0, contradiction
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), a.mul(a).add(b.mul(b)));
+        F::axiom_eqv_symmetric(F::zero(), a.mul(a).add(b.mul(b)));
+    }
+    // a² ≡ 0
+
+    // Similarly b² ≡ 0
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), b.mul(b));
+    F::axiom_eqv_symmetric(F::zero(), b.mul(b));
+    if !b.mul(b).eqv(F::zero()) {
+        lemma_add_nonneg_pos::<F>(a.mul(a), b.mul(b));
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), a.mul(a).add(b.mul(b)));
+        F::axiom_eqv_symmetric(F::zero(), a.mul(a).add(b.mul(b)));
+    }
+    // b² ≡ 0
+
+    // a² ≡ 0 and ¬a≡0 would give ¬(a²≡0) by nonzero_product. So a ≡ 0.
+    F::axiom_eqv_symmetric(a.mul(a), F::zero());
+    if !a.eqv(F::zero()) {
+        lemma_nonzero_product::<F>(a, a);
+    }
+
+    F::axiom_eqv_symmetric(b.mul(b), F::zero());
+    if !b.eqv(F::zero()) {
+        lemma_nonzero_product::<F>(b, b);
+    }
+}
+
+/// a*a + b*b + c*c ≡ 0 implies a ≡ 0 and b ≡ 0 and c ≡ 0 (for OrderedField).
+pub proof fn lemma_sum_squares_zero_3d<F: OrderedField>(a: F, b: F, c: F)
+    requires
+        a.mul(a).add(b.mul(b)).add(c.mul(c)).eqv(F::zero()),
+    ensures
+        a.eqv(F::zero()),
+        b.eqv(F::zero()),
+        c.eqv(F::zero()),
+{
+    // 0 ≤ a²+b² and 0 ≤ c²
+    lemma_sum_squares_nonneg_2d::<F>(a, b);
+    lemma_square_nonneg::<F>(c);
+
+    // If a²+b² > 0, then (a²+b²)+c² > 0, contradicting the hypothesis
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), a.mul(a).add(b.mul(b)));
+    F::axiom_eqv_symmetric(F::zero(), a.mul(a).add(b.mul(b)));
+    if !a.mul(a).add(b.mul(b)).eqv(F::zero()) {
+        lemma_add_pos_nonneg::<F>(a.mul(a).add(b.mul(b)), c.mul(c));
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), a.mul(a).add(b.mul(b)).add(c.mul(c)));
+        F::axiom_eqv_symmetric(F::zero(), a.mul(a).add(b.mul(b)).add(c.mul(c)));
+    }
+    // a²+b² ≡ 0
+    // By sum_squares_zero_2d: a ≡ 0 and b ≡ 0
+    F::axiom_eqv_symmetric(a.mul(a).add(b.mul(b)), F::zero());
+    lemma_sum_squares_zero_2d::<F>(a, b);
+
+    // Similarly c² ≡ 0
+    F::axiom_lt_iff_le_and_not_eqv(F::zero(), c.mul(c));
+    F::axiom_eqv_symmetric(F::zero(), c.mul(c));
+    if !c.mul(c).eqv(F::zero()) {
+        lemma_add_nonneg_pos::<F>(a.mul(a).add(b.mul(b)), c.mul(c));
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), a.mul(a).add(b.mul(b)).add(c.mul(c)));
+        F::axiom_eqv_symmetric(F::zero(), a.mul(a).add(b.mul(b)).add(c.mul(c)));
+    }
+
+    F::axiom_eqv_symmetric(c.mul(c), F::zero());
+    if !c.eqv(F::zero()) {
+        lemma_nonzero_product::<F>(c, c);
+    }
+}
+
+/// Helper: (x*y)*(x*y) ≡ (x*x)*(y*y), i.e. (xy)² ≡ x²y².
+proof fn lemma_square_mul<R: Ring>(x: R, y: R)
+    ensures
+        x.mul(y).mul(x.mul(y)).eqv(x.mul(x).mul(y.mul(y))),
+{
+    // (xy)(xy) ≡ x(y(xy))  [assoc]
+    R::axiom_mul_associative(x, y, x.mul(y));
+    // y(xy) chain: y(xy) ≡ (yx)y ≡ (xy)y ≡ x(yy)
+    R::axiom_mul_associative(y, x, y);
+    R::axiom_eqv_symmetric(y.mul(x).mul(y), y.mul(x.mul(y)));
+    R::axiom_mul_commutative(y, x);
+    R::axiom_mul_congruence_left(y.mul(x), x.mul(y), y);
+    R::axiom_mul_associative(x, y, y);
+    R::axiom_eqv_transitive(y.mul(x.mul(y)), y.mul(x).mul(y), x.mul(y).mul(y));
+    R::axiom_eqv_transitive(y.mul(x.mul(y)), x.mul(y).mul(y), x.mul(y.mul(y)));
+    // x(y(xy)) ≡ x(x(yy))
+    lemma_mul_congruence_right::<R>(x, y.mul(x.mul(y)), x.mul(y.mul(y)));
+    R::axiom_eqv_transitive(
+        x.mul(y).mul(x.mul(y)),
+        x.mul(y.mul(x.mul(y))),
+        x.mul(x.mul(y.mul(y))),
+    );
+    // x(x(yy)) ≡ (xx)(yy)  [assoc reversed]
+    R::axiom_mul_associative(x, x, y.mul(y));
+    R::axiom_eqv_symmetric(x.mul(x).mul(y.mul(y)), x.mul(x.mul(y.mul(y))));
+    R::axiom_eqv_transitive(
+        x.mul(y).mul(x.mul(y)),
+        x.mul(x.mul(y.mul(y))),
+        x.mul(x).mul(y.mul(y)),
+    );
+}
+
+/// Helper: (a*c)*(b*d) ≡ (a*d)*(b*c) — four-way product rearrangement.
+/// Both sides equal a*(b*(c*d)) via associativity and commutativity.
+proof fn lemma_mul_four_commute<R: Ring>(a: R, b: R, c: R, d: R)
+    ensures
+        a.mul(c).mul(b.mul(d)).eqv(a.mul(d).mul(b.mul(c))),
+{
+    // (ac)(bd) ≡ a(c(bd)) ≡ a(b(cd)):
+    R::axiom_mul_associative(a, c, b.mul(d));
+    // c(bd) ≡ (cb)d ≡ (bc)d ≡ b(cd)
+    R::axiom_mul_associative(c, b, d);
+    R::axiom_eqv_symmetric(c.mul(b).mul(d), c.mul(b.mul(d)));
+    R::axiom_mul_commutative(c, b);
+    R::axiom_mul_congruence_left(c.mul(b), b.mul(c), d);
+    R::axiom_mul_associative(b, c, d);
+    R::axiom_eqv_transitive(c.mul(b.mul(d)), c.mul(b).mul(d), b.mul(c).mul(d));
+    R::axiom_eqv_transitive(c.mul(b.mul(d)), b.mul(c).mul(d), b.mul(c.mul(d)));
+    lemma_mul_congruence_right::<R>(a, c.mul(b.mul(d)), b.mul(c.mul(d)));
+    R::axiom_eqv_transitive(
+        a.mul(c).mul(b.mul(d)),
+        a.mul(c.mul(b.mul(d))),
+        a.mul(b.mul(c.mul(d))),
+    );
+
+    // (ad)(bc) ≡ a(d(bc)) ≡ a(b(cd)):
+    R::axiom_mul_associative(a, d, b.mul(c));
+    // d(bc) ≡ (db)c ≡ (bd)c ≡ b(dc) ≡ b(cd)
+    R::axiom_mul_associative(d, b, c);
+    R::axiom_eqv_symmetric(d.mul(b).mul(c), d.mul(b.mul(c)));
+    R::axiom_mul_commutative(d, b);
+    R::axiom_mul_congruence_left(d.mul(b), b.mul(d), c);
+    R::axiom_mul_associative(b, d, c);
+    R::axiom_eqv_transitive(d.mul(b.mul(c)), d.mul(b).mul(c), b.mul(d).mul(c));
+    R::axiom_eqv_transitive(d.mul(b.mul(c)), b.mul(d).mul(c), b.mul(d.mul(c)));
+    R::axiom_mul_commutative(d, c);
+    lemma_mul_congruence_right::<R>(b, d.mul(c), c.mul(d));
+    R::axiom_eqv_transitive(d.mul(b.mul(c)), b.mul(d.mul(c)), b.mul(c.mul(d)));
+    lemma_mul_congruence_right::<R>(a, d.mul(b.mul(c)), b.mul(c.mul(d)));
+    R::axiom_eqv_transitive(
+        a.mul(d).mul(b.mul(c)),
+        a.mul(d.mul(b.mul(c))),
+        a.mul(b.mul(c.mul(d))),
+    );
+
+    // Both ≡ a(b(cd)), so (ac)(bd) ≡ (ad)(bc)
+    R::axiom_eqv_symmetric(a.mul(d).mul(b.mul(c)), a.mul(b.mul(c.mul(d))));
+    R::axiom_eqv_transitive(
+        a.mul(c).mul(b.mul(d)),
+        a.mul(b.mul(c.mul(d))),
+        a.mul(d).mul(b.mul(c)),
+    );
+}
+
+/// Helper: distribute (x²+y²)*(u²+v²) ≡ (xu)²+(xv)²+(yu)²+(yv)².
+/// Returns in the form ((xu)²+(xv)²) + ((yu)²+(yv)²).
+proof fn lemma_expand_product_of_sums_of_squares<R: Ring>(x: R, y: R, u: R, v: R)
+    ensures
+        x.mul(x).add(y.mul(y)).mul(u.mul(u).add(v.mul(v))).eqv(
+            x.mul(u).mul(x.mul(u)).add(x.mul(v).mul(x.mul(v)))
+                .add(y.mul(u).mul(y.mul(u)).add(y.mul(v).mul(y.mul(v))))
+        ),
+{
+    let xx = x.mul(x);
+    let yy = y.mul(y);
+    let uu = u.mul(u);
+    let vv = v.mul(v);
+    // (x²+y²)(u²+v²) ≡ x²(u²+v²) + y²(u²+v²)  [right distrib]
+    lemma_mul_distributes_right::<R>(xx, yy, uu.add(vv));
+
+    // x²(u²+v²) ≡ x²u² + x²v²  [left distrib]
+    R::axiom_mul_distributes_left(xx, uu, vv);
+    // x²u² ≡ (xu)² and x²v² ≡ (xv)²
+    lemma_square_mul::<R>(x, u);
+    R::axiom_eqv_symmetric(x.mul(u).mul(x.mul(u)), xx.mul(uu));
+    lemma_square_mul::<R>(x, v);
+    R::axiom_eqv_symmetric(x.mul(v).mul(x.mul(v)), xx.mul(vv));
+    lemma_add_congruence::<R>(
+        xx.mul(uu), x.mul(u).mul(x.mul(u)),
+        xx.mul(vv), x.mul(v).mul(x.mul(v)),
+    );
+    R::axiom_eqv_transitive(
+        xx.mul(uu.add(vv)),
+        xx.mul(uu).add(xx.mul(vv)),
+        x.mul(u).mul(x.mul(u)).add(x.mul(v).mul(x.mul(v))),
+    );
+
+    // y²(u²+v²) ≡ y²u² + y²v²  [left distrib]
+    R::axiom_mul_distributes_left(yy, uu, vv);
+    // y²u² ≡ (yu)² and y²v² ≡ (yv)²
+    lemma_square_mul::<R>(y, u);
+    R::axiom_eqv_symmetric(y.mul(u).mul(y.mul(u)), yy.mul(uu));
+    lemma_square_mul::<R>(y, v);
+    R::axiom_eqv_symmetric(y.mul(v).mul(y.mul(v)), yy.mul(vv));
+    lemma_add_congruence::<R>(
+        yy.mul(uu), y.mul(u).mul(y.mul(u)),
+        yy.mul(vv), y.mul(v).mul(y.mul(v)),
+    );
+    R::axiom_eqv_transitive(
+        yy.mul(uu.add(vv)),
+        yy.mul(uu).add(yy.mul(vv)),
+        y.mul(u).mul(y.mul(u)).add(y.mul(v).mul(y.mul(v))),
+    );
+
+    // Combine: (x²+y²)(u²+v²) ≡ x²(u²+v²) + y²(u²+v²) ≡ ((xu)²+(xv)²) + ((yu)²+(yv)²)
+    lemma_add_congruence::<R>(
+        xx.mul(uu.add(vv)), x.mul(u).mul(x.mul(u)).add(x.mul(v).mul(x.mul(v))),
+        yy.mul(uu.add(vv)), y.mul(u).mul(y.mul(u)).add(y.mul(v).mul(y.mul(v))),
+    );
+    R::axiom_eqv_transitive(
+        xx.add(yy).mul(uu.add(vv)),
+        xx.mul(uu.add(vv)).add(yy.mul(uu.add(vv))),
+        x.mul(u).mul(x.mul(u)).add(x.mul(v).mul(x.mul(v)))
+            .add(y.mul(u).mul(y.mul(u)).add(y.mul(v).mul(y.mul(v)))),
+    );
+}
+
+/// Cauchy-Schwarz in 2D: (a*c + b*d)² ≤ (a²+b²)*(c²+d²) (for OrderedRing).
+/// Uses the Lagrange identity: (a²+b²)(c²+d²) = (ac+bd)² + (ad-bc)² ≥ (ac+bd)².
+pub proof fn lemma_cauchy_schwarz_2d<R: OrderedRing>(a: R, b: R, c: R, d: R)
+    ensures
+        a.mul(c).add(b.mul(d)).mul(a.mul(c).add(b.mul(d))).le(
+            a.mul(a).add(b.mul(b)).mul(c.mul(c).add(d.mul(d)))
+        ),
+{
+    let ac = a.mul(c);
+    let bd = b.mul(d);
+    let ad = a.mul(d);
+    let bc = b.mul(c);
+    let two = R::one().add(R::one());
+
+    // ══════════════════════════════════════════════════════════════════
+    // Part A: Show 2*(ac)(bd) ≤ (ad)² + (bc)²
+    // ══════════════════════════════════════════════════════════════════
+
+    // 0 ≤ (ad-bc)²
+    lemma_square_nonneg::<R>(ad.sub(bc));
+    // (ad-bc)² ≡ (ad)² - 2*(ad)*(bc) + (bc)²
+    lemma_square_sub_expand::<R>(ad, bc);
+    // 0 ≤ (ad)² - 2*(ad)*(bc) + (bc)²
+    lemma_le_congruence_right::<R>(
+        R::zero(),
+        ad.sub(bc).mul(ad.sub(bc)),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc)),
+    );
+
+    // Add 2*(ad)*(bc) to both sides:
+    // 2*(ad)*(bc) ≤ (ad)² - 2*(ad)*(bc) + (bc)² + 2*(ad)*(bc)
+    R::axiom_le_add_monotone(
+        R::zero(),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc)),
+        two.mul(ad.mul(bc)),
+    );
+    // LHS: 0 + 2*(ad)*(bc) ≡ 2*(ad)*(bc)
+    lemma_add_zero_left::<R>(two.mul(ad.mul(bc)));
+    lemma_le_congruence_left::<R>(
+        R::zero().add(two.mul(ad.mul(bc))),
+        two.mul(ad.mul(bc)),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc)).add(two.mul(ad.mul(bc))),
+    );
+
+    // RHS: ((ad)²-2xy+bc²) + 2xy ≡ (ad)² + (bc)²
+    // Rearrange via assoc: ((ad)²-2xy) + (bc²+2xy) → ((ad)²-2xy) + (2xy+bc²)
+    R::axiom_add_associative(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))),
+        bc.mul(bc),
+        two.mul(ad.mul(bc)),
+    );
+    R::axiom_add_commutative(bc.mul(bc), two.mul(ad.mul(bc)));
+    lemma_add_congruence_right::<R>(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))),
+        bc.mul(bc).add(two.mul(ad.mul(bc))),
+        two.mul(ad.mul(bc)).add(bc.mul(bc)),
+    );
+    R::axiom_eqv_transitive(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc)).add(two.mul(ad.mul(bc))),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc).add(two.mul(ad.mul(bc)))),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(two.mul(ad.mul(bc)).add(bc.mul(bc))),
+    );
+    // ((ad)²-2xy) + (2xy+bc²) ≡ ((ad)²-2xy+2xy) + bc²  [assoc reversed]
+    R::axiom_add_associative(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))),
+        two.mul(ad.mul(bc)),
+        bc.mul(bc),
+    );
+    R::axiom_eqv_symmetric(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(two.mul(ad.mul(bc))).add(bc.mul(bc)),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(two.mul(ad.mul(bc)).add(bc.mul(bc))),
+    );
+    R::axiom_eqv_transitive(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc)).add(two.mul(ad.mul(bc))),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(two.mul(ad.mul(bc)).add(bc.mul(bc))),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(two.mul(ad.mul(bc))).add(bc.mul(bc)),
+    );
+    // (ad)²-2xy+2xy ≡ (ad)²  [sub_then_add_cancel]
+    lemma_sub_then_add_cancel::<R>(ad.mul(ad), two.mul(ad.mul(bc)));
+    R::axiom_add_congruence_left(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(two.mul(ad.mul(bc))),
+        ad.mul(ad),
+        bc.mul(bc),
+    );
+    R::axiom_eqv_transitive(
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc)).add(two.mul(ad.mul(bc))),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(two.mul(ad.mul(bc))).add(bc.mul(bc)),
+        ad.mul(ad).add(bc.mul(bc)),
+    );
+
+    // So: 2*(ad)*(bc) ≤ (ad)² + (bc)²
+    lemma_le_congruence_right::<R>(
+        two.mul(ad.mul(bc)),
+        ad.mul(ad).sub(two.mul(ad.mul(bc))).add(bc.mul(bc)).add(two.mul(ad.mul(bc))),
+        ad.mul(ad).add(bc.mul(bc)),
+    );
+
+    // Use (ac)(bd) ≡ (ad)(bc) to get: 2*(ac)*(bd) ≤ (ad)²+(bc)²
+    lemma_mul_four_commute::<R>(a, b, c, d);
+    lemma_mul_congruence_right::<R>(two, ac.mul(bd), ad.mul(bc));
+    R::axiom_eqv_symmetric(two.mul(ac.mul(bd)), two.mul(ad.mul(bc)));
+    lemma_le_congruence_left::<R>(
+        two.mul(ad.mul(bc)),
+        two.mul(ac.mul(bd)),
+        ad.mul(ad).add(bc.mul(bc)),
+    );
+    // Now: 2*(ac)*(bd) ≤ (ad)² + (bc)²
+
+    // ══════════════════════════════════════════════════════════════════
+    // Part B: Add (ac)²+(bd)² to both sides
+    // ══════════════════════════════════════════════════════════════════
+
+    // (ac)²+(bd)² + 2*(ac)(bd) ≤ (ac)²+(bd)² + (ad)²+(bc)²
+    R::axiom_le_reflexive(ac.mul(ac).add(bd.mul(bd)));
+    lemma_le_add_both::<R>(
+        two.mul(ac.mul(bd)),
+        ad.mul(ad).add(bc.mul(bc)),
+        ac.mul(ac).add(bd.mul(bd)),
+        ac.mul(ac).add(bd.mul(bd)),
+    );
+    // Commute LHS: 2*(ac)(bd) + (ac)²+(bd)² ≡ (ac)²+(bd)² + 2*(ac)(bd)
+    R::axiom_add_commutative(two.mul(ac.mul(bd)), ac.mul(ac).add(bd.mul(bd)));
+    // Commute RHS: (ad)²+(bc)² + (ac)²+(bd)² ≡ (ac)²+(bd)² + (ad)²+(bc)²
+    R::axiom_add_commutative(ad.mul(ad).add(bc.mul(bc)), ac.mul(ac).add(bd.mul(bd)));
+    R::axiom_le_congruence(
+        two.mul(ac.mul(bd)).add(ac.mul(ac).add(bd.mul(bd))),
+        ac.mul(ac).add(bd.mul(bd)).add(two.mul(ac.mul(bd))),
+        ad.mul(ad).add(bc.mul(bc)).add(ac.mul(ac).add(bd.mul(bd))),
+        ac.mul(ac).add(bd.mul(bd)).add(ad.mul(ad).add(bc.mul(bc))),
+    );
+    // So: (ac)²+(bd)² + 2*(ac)(bd) ≤ (ac)²+(bd)² + (ad)²+(bc)²
+
+    // ══════════════════════════════════════════════════════════════════
+    // Part C: LHS ≡ (ac+bd)²
+    // ══════════════════════════════════════════════════════════════════
+
+    // (ac+bd)² ≡ (ac)² + 2*(ac)*(bd) + (bd)²  [square_expand]
+    lemma_square_expand::<R>(ac, bd);
+    // Grouping: ((ac)² + 2*(ac)(bd)) + (bd)²
+    // Rearrange to: (ac)² + (bd)² + 2*(ac)(bd)
+    // via: ((ac)²+2xy)+(bd)² ≡ (ac)²+(2xy+(bd)²) ≡ (ac)²+((bd)²+2xy) ≡ ((ac)²+(bd)²)+2xy
+    R::axiom_add_associative(ac.mul(ac), two.mul(ac.mul(bd)), bd.mul(bd));
+    R::axiom_add_commutative(two.mul(ac.mul(bd)), bd.mul(bd));
+    lemma_add_congruence_right::<R>(
+        ac.mul(ac),
+        two.mul(ac.mul(bd)).add(bd.mul(bd)),
+        bd.mul(bd).add(two.mul(ac.mul(bd))),
+    );
+    R::axiom_eqv_transitive(
+        ac.mul(ac).add(two.mul(ac.mul(bd))).add(bd.mul(bd)),
+        ac.mul(ac).add(two.mul(ac.mul(bd)).add(bd.mul(bd))),
+        ac.mul(ac).add(bd.mul(bd).add(two.mul(ac.mul(bd)))),
+    );
+    R::axiom_add_associative(ac.mul(ac), bd.mul(bd), two.mul(ac.mul(bd)));
+    R::axiom_eqv_symmetric(
+        ac.mul(ac).add(bd.mul(bd)).add(two.mul(ac.mul(bd))),
+        ac.mul(ac).add(bd.mul(bd).add(two.mul(ac.mul(bd)))),
+    );
+    R::axiom_eqv_transitive(
+        ac.mul(ac).add(two.mul(ac.mul(bd))).add(bd.mul(bd)),
+        ac.mul(ac).add(bd.mul(bd).add(two.mul(ac.mul(bd)))),
+        ac.mul(ac).add(bd.mul(bd)).add(two.mul(ac.mul(bd))),
+    );
+    // (ac+bd)² ≡ (ac)²+(bd)² + 2*(ac)(bd)
+    R::axiom_eqv_transitive(
+        ac.add(bd).mul(ac.add(bd)),
+        ac.mul(ac).add(two.mul(ac.mul(bd))).add(bd.mul(bd)),
+        ac.mul(ac).add(bd.mul(bd)).add(two.mul(ac.mul(bd))),
+    );
+    // Apply congruence: (ac+bd)² ≤ RHS
+    R::axiom_eqv_symmetric(
+        ac.add(bd).mul(ac.add(bd)),
+        ac.mul(ac).add(bd.mul(bd)).add(two.mul(ac.mul(bd))),
+    );
+    lemma_le_congruence_left::<R>(
+        ac.mul(ac).add(bd.mul(bd)).add(two.mul(ac.mul(bd))),
+        ac.add(bd).mul(ac.add(bd)),
+        ac.mul(ac).add(bd.mul(bd)).add(ad.mul(ad).add(bc.mul(bc))),
+    );
+
+    // ══════════════════════════════════════════════════════════════════
+    // Part D: RHS ≡ (a²+b²)(c²+d²)
+    // ══════════════════════════════════════════════════════════════════
+
+    // Expand (a²+b²)(c²+d²) ≡ ((ac)²+(ad)²) + ((bc)²+(bd)²)
+    lemma_expand_product_of_sums_of_squares::<R>(a, b, c, d);
+
+    // Rearrange: ((ac)²+(ad)²)+((bc)²+(bd)²) ≡ ((ac)²+(bd)²)+((ad)²+(bc)²)
+    lemma_add_rearrange_2x2::<R>(ac.mul(ac), ad.mul(ad), bc.mul(bc), bd.mul(bd));
+    // rearrange_2x2 gives: ((ac)²+(ad)²)+((bc)²+(bd)²) ≡ ((ac)²+(bc)²)+((ad)²+(bd)²)
+    // But we need: ≡ ((ac)²+(bd)²)+((ad)²+(bc)²)
+    // So we need a different rearrangement.
+    // Let me use rearrange_2x2 with different grouping:
+    // We have ((ac)²+(ad)²)+((bc)²+(bd)²) from the expansion.
+    // We want ((ac)²+(bd)²)+((ad)²+(bc)²).
+    // Apply rearrange_2x2 to the expansion:
+    // (p+q)+(r+s) ≡ (p+r)+(q+s) where p=(ac)², q=(ad)², r=(bc)², s=(bd)²
+    // gives ((ac)²+(bc)²)+((ad)²+(bd)²)
+    // Then we need to swap the two inner sums:
+    // ((ac)²+(bc)²)+((ad)²+(bd)²) and we want ((ac)²+(bd)²)+((ad)²+(bc)²)
+    // These are different groupings. Let me use a different approach.
+
+    // From expansion: (a²+b²)(c²+d²) ≡ ((ac)²+(ad)²)+((bc)²+(bd)²)
+    // We want to show this ≡ ((ac)²+(bd)²)+((ad)²+(bc)²)
+    // Use rearrange_2x2 on ((ac)²+(ad)²)+((bc)²+(bd)²):
+    // With a1=(ac)², b1=(ad)², c1=(bc)², d1=(bd)²:
+    // (a1+b1)+(c1+d1) ≡ (a1+c1)+(b1+d1)
+    R::axiom_eqv_transitive(
+        a.mul(a).add(b.mul(b)).mul(c.mul(c).add(d.mul(d))),
+        ac.mul(ac).add(ad.mul(ad)).add(bc.mul(bc).add(bd.mul(bd))),
+        ac.mul(ac).add(bc.mul(bc)).add(ad.mul(ad).add(bd.mul(bd))),
+    );
+    // Now swap the two pairs in each sum to get our target form.
+    // We have ((ac)²+(bc)²) + ((ad)²+(bd)²).
+    // We want ((ac)²+(bd)²) + ((ad)²+(bc)²).
+    // Apply rearrange_2x2 again: (a1+c1)+(b1+d1) ≡ (a1+b1)+(c1+d1)
+    // Wait, that just reverses it. Let me think...
+    // Actually: ((ac)²+(bc)²)+((ad)²+(bd)²) = ((ac)²+(bc)²)+((ad)²+(bd)²)
+    // Apply rearrange_2x2 with a1=(ac)², b1=(bc)², c1=(ad)², d1=(bd)²:
+    // ((ac)²+(bc)²)+((ad)²+(bd)²) ≡ ((ac)²+(ad)²)+((bc)²+(bd)²)
+    // That goes back to the original. Not helpful.
+
+    // Different approach: rearrange the inner sums.
+    // From ((ac)²+(bc)²)+((ad)²+(bd)²), swap bc² and bd² between groups:
+    // We can use: ((ac)²+(bc)²)+((ad)²+(bd)²) via assoc+comm:
+    // ≡ (ac)²+(bc)²+(ad)²+(bd)² [flatten]
+    // ≡ (ac)²+(bd)²+(ad)²+(bc)² [rearrange inner]
+    // ≡ ((ac)²+(bd)²)+((ad)²+(bc)²) [regroup]
+    // This requires showing a 4-element rearrangement. Let me use two applications.
+
+    // Step D1: ((ac)²+(bc)²)+((ad)²+(bd)²) ≡ (ac)²+((bc)²+((ad)²+(bd)²))  [assoc]
+    R::axiom_add_associative(ac.mul(ac), bc.mul(bc), ad.mul(ad).add(bd.mul(bd)));
+    // Step D2: (bc)²+((ad)²+(bd)²) ≡ ((bc)²+(ad)²)+(bd)²  [assoc reversed]
+    R::axiom_add_associative(bc.mul(bc), ad.mul(ad), bd.mul(bd));
+    R::axiom_eqv_symmetric(
+        bc.mul(bc).add(ad.mul(ad)).add(bd.mul(bd)),
+        bc.mul(bc).add(ad.mul(ad).add(bd.mul(bd))),
+    );
+    // Step D3: (bc)²+(ad)² ≡ (ad)²+(bc)²  [comm]
+    R::axiom_add_commutative(bc.mul(bc), ad.mul(ad));
+    R::axiom_add_congruence_left(
+        bc.mul(bc).add(ad.mul(ad)),
+        ad.mul(ad).add(bc.mul(bc)),
+        bd.mul(bd),
+    );
+    // Chain: (bc)²+((ad)²+(bd)²) ≡ ((bc)²+(ad)²)+(bd)² ≡ ((ad)²+(bc)²)+(bd)²
+    R::axiom_eqv_transitive(
+        bc.mul(bc).add(ad.mul(ad).add(bd.mul(bd))),
+        bc.mul(bc).add(ad.mul(ad)).add(bd.mul(bd)),
+        ad.mul(ad).add(bc.mul(bc)).add(bd.mul(bd)),
+    );
+    // Step D4: ((ad)²+(bc)²)+(bd)² ≡ (ad)²+((bc)²+(bd)²)  [assoc]
+    R::axiom_add_associative(ad.mul(ad), bc.mul(bc), bd.mul(bd));
+    R::axiom_eqv_transitive(
+        bc.mul(bc).add(ad.mul(ad).add(bd.mul(bd))),
+        ad.mul(ad).add(bc.mul(bc)).add(bd.mul(bd)),
+        ad.mul(ad).add(bc.mul(bc).add(bd.mul(bd))),
+    );
+    // Step D5: (bc)²+(bd)² ≡ (bd)²+(bc)²  [comm]
+    R::axiom_add_commutative(bc.mul(bc), bd.mul(bd));
+    lemma_add_congruence_right::<R>(
+        ad.mul(ad),
+        bc.mul(bc).add(bd.mul(bd)),
+        bd.mul(bd).add(bc.mul(bc)),
+    );
+    R::axiom_eqv_transitive(
+        bc.mul(bc).add(ad.mul(ad).add(bd.mul(bd))),
+        ad.mul(ad).add(bc.mul(bc).add(bd.mul(bd))),
+        ad.mul(ad).add(bd.mul(bd).add(bc.mul(bc))),
+    );
+    // Step D6: (ad)²+((bd)²+(bc)²) ≡ ((ad)²+(bd)²)+(bc)²  [assoc reversed]... wait, wrong direction.
+    // Actually we want: (bc)²+((ad)²+(bd)²) was our starting point, and we've shown it ≡ (ad)²+((bd)²+(bc)²)
+    // Now I need (ac)²+(this) ≡ ((ac)²+(bd)²)+((ad)²+(bc)²)
+
+    // Let me take: (ac)²+((bc)²+((ad)²+(bd)²))) from Step D1
+    // ≡ (ac)²+((ad)²+((bd)²+(bc)²)))  via our chain
+    lemma_add_congruence_right::<R>(
+        ac.mul(ac),
+        bc.mul(bc).add(ad.mul(ad).add(bd.mul(bd))),
+        ad.mul(ad).add(bd.mul(bd).add(bc.mul(bc))),
+    );
+    R::axiom_eqv_transitive(
+        ac.mul(ac).add(bc.mul(bc)).add(ad.mul(ad).add(bd.mul(bd))),
+        ac.mul(ac).add(bc.mul(bc).add(ad.mul(ad).add(bd.mul(bd)))),
+        ac.mul(ac).add(ad.mul(ad).add(bd.mul(bd).add(bc.mul(bc)))),
+    );
+    // Now: (ac)²+((ad)²+((bd)²+(bc)²)) ≡ ((ac)²+(ad)²)+((bd)²+(bc)²)... no.
+    // Actually: (ac)²+(x+(y+z)) ≡ ((ac)²+x)+(y+z)  [assoc reversed]
+    // where x=(ad)², y=(bd)², z=(bc)²
+    // ≡ ((ac)²+(ad)²)+((bd)²+(bc)²)
+    // Hmm, this is getting complicated. Let me try a completely different rearrangement.
+
+    // Actually, the simplest approach: just apply rearrange_2x2 to our final inequality.
+    // We have: (ac+bd)² ≤ ((ac)²+(bd)²)+((ad)²+(bc)²)
+    // And (a²+b²)(c²+d²) ≡ ((ac)²+(ad)²)+((bc)²+(bd)²)
+    // So we need ((ac)²+(bd)²)+((ad)²+(bc)²) ≡ ((ac)²+(ad)²)+((bc)²+(bd)²)
+    // This is just rearrange_2x2 with a=(ac)², b=(bd)², c=(ad)², d=(bc)²:
+    lemma_add_rearrange_2x2::<R>(ac.mul(ac), bd.mul(bd), ad.mul(ad), bc.mul(bc));
+    // ((ac)²+(bd)²)+((ad)²+(bc)²) ≡ ((ac)²+(ad)²)+((bd)²+(bc)²)
+    // Need to fix: ((bd)²+(bc)²) ≡ ((bc)²+(bd)²) [comm]
+    R::axiom_add_commutative(bd.mul(bd), bc.mul(bc));
+    lemma_add_congruence_right::<R>(
+        ac.mul(ac).add(ad.mul(ad)),
+        bd.mul(bd).add(bc.mul(bc)),
+        bc.mul(bc).add(bd.mul(bd)),
+    );
+    R::axiom_eqv_transitive(
+        ac.mul(ac).add(bd.mul(bd)).add(ad.mul(ad).add(bc.mul(bc))),
+        ac.mul(ac).add(ad.mul(ad)).add(bd.mul(bd).add(bc.mul(bc))),
+        ac.mul(ac).add(ad.mul(ad)).add(bc.mul(bc).add(bd.mul(bd))),
+    );
+
+    // So ((ac)²+(bd)²)+((ad)²+(bc)²) ≡ ((ac)²+(ad)²)+((bc)²+(bd)²) ≡ (a²+b²)(c²+d²)
+    R::axiom_eqv_symmetric(
+        a.mul(a).add(b.mul(b)).mul(c.mul(c).add(d.mul(d))),
+        ac.mul(ac).add(ad.mul(ad)).add(bc.mul(bc).add(bd.mul(bd))),
+    );
+    R::axiom_eqv_transitive(
+        ac.mul(ac).add(bd.mul(bd)).add(ad.mul(ad).add(bc.mul(bc))),
+        ac.mul(ac).add(ad.mul(ad)).add(bc.mul(bc).add(bd.mul(bd))),
+        a.mul(a).add(b.mul(b)).mul(c.mul(c).add(d.mul(d))),
+    );
+
+    // Final: (ac+bd)² ≤ ((ac)²+(bd)²)+((ad)²+(bc)²) ≡ (a²+b²)(c²+d²)
+    lemma_le_congruence_right::<R>(
+        ac.add(bd).mul(ac.add(bd)),
+        ac.mul(ac).add(bd.mul(bd)).add(ad.mul(ad).add(bc.mul(bc))),
+        a.mul(a).add(b.mul(b)).mul(c.mul(c).add(d.mul(d))),
+    );
 }
 
 } // verus!

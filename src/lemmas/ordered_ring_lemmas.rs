@@ -615,4 +615,65 @@ pub proof fn lemma_square_le_square<R: OrderedRing>(a: R, b: R)
     R::axiom_le_transitive(a.mul(a), a.mul(b), b.mul(b));
 }
 
+/// a ≤ b if and only if 0 ≤ b - a.
+pub proof fn lemma_le_iff_sub_nonneg<R: OrderedRing>(a: R, b: R)
+    ensures
+        a.le(b) == R::zero().le(b.sub(a)),
+{
+    // Forward: a ≤ b → 0 ≤ b - a
+    if a.le(b) {
+        // a ≤ b → a + (-a) ≤ b + (-a)
+        R::axiom_le_add_monotone(a, b, a.neg());
+        // a + (-a) ≡ 0
+        R::axiom_add_inverse_right(a);
+        // b + (-a) ≡ b - a (symmetric)
+        R::axiom_sub_is_add_neg(b, a);
+        R::axiom_eqv_symmetric(b.sub(a), b.add(a.neg()));
+        // 0 ≡ a+(-a) and b-a ≡ b+(-a)
+        R::axiom_eqv_symmetric(a.add(a.neg()), R::zero());
+        R::axiom_le_congruence(a.add(a.neg()), R::zero(), b.add(a.neg()), b.sub(a));
+    }
+    // Backward: 0 ≤ b - a → a ≤ b
+    if R::zero().le(b.sub(a)) {
+        // 0 + a ≤ (b-a) + a
+        R::axiom_le_add_monotone(R::zero(), b.sub(a), a);
+        // 0 + a ≡ a
+        lemma_add_zero_left::<R>(a);
+        // (b-a) + a ≡ b
+        lemma_sub_then_add_cancel::<R>(b, a);
+        // a ≤ b
+        R::axiom_le_congruence(R::zero().add(a), a, b.sub(a).add(a), b);
+    }
+}
+
+/// c ≤ 0 and a ≤ b implies b*c ≤ a*c (multiplication by nonpositive flips order).
+pub proof fn lemma_le_mul_nonpos_flip<R: OrderedRing>(a: R, b: R, c: R)
+    requires
+        c.le(R::zero()),
+        a.le(b),
+    ensures
+        b.mul(c).le(a.mul(c)),
+{
+    // c ≤ 0 → 0 ≤ -c
+    lemma_neg_nonpos_iff::<R>(c);
+    // a ≤ b and 0 ≤ -c → a*(-c) ≤ b*(-c)
+    R::axiom_le_mul_nonneg_monotone(a, b, c.neg());
+    // a*(-c) ≡ -(a*c)
+    lemma_mul_neg_right::<R>(a, c);
+    // b*(-c) ≡ -(b*c)
+    lemma_mul_neg_right::<R>(b, c);
+    // -(a*c) ≤ -(b*c)  (via congruence from a*(-c) ≤ b*(-c))
+    R::axiom_le_congruence(a.mul(c.neg()), a.mul(c).neg(), b.mul(c.neg()), b.mul(c).neg());
+    // -(a*c) ≤ -(b*c) → b*c ≤ a*c  (le_neg_flip reversal)
+    lemma_le_neg_flip::<R>(a.mul(c).neg(), b.mul(c).neg());
+    // -(-( a*c )) ≡ a*c
+    lemma_neg_involution::<R>(a.mul(c));
+    // -(-(b*c)) ≡ b*c
+    lemma_neg_involution::<R>(b.mul(c));
+    // b*c ≡ -(-(b*c)) and a*c ≡ -(-(a*c))
+    R::axiom_eqv_symmetric(b.mul(c).neg().neg(), b.mul(c));
+    R::axiom_eqv_symmetric(a.mul(c).neg().neg(), a.mul(c));
+    R::axiom_le_congruence(b.mul(c).neg().neg(), b.mul(c), a.mul(c).neg().neg(), a.mul(c));
+}
+
 } // verus!

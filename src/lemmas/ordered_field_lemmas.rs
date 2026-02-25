@@ -507,4 +507,30 @@ pub proof fn lemma_cross_mul_le<F: OrderedField>(a: F, b: F, c: F, d: F)
     }
 }
 
+/// c < 0 and a < b implies b*c < a*c (strict multiplication by negative flips order).
+pub proof fn lemma_lt_mul_nonpos_flip<F: OrderedField>(a: F, b: F, c: F)
+    requires
+        c.lt(F::zero()),
+        a.lt(b),
+    ensures
+        b.mul(c).lt(a.mul(c)),
+{
+    // c < 0 → c ≤ 0
+    F::axiom_lt_iff_le_and_not_eqv(c, F::zero());
+    // a < b → a ≤ b
+    F::axiom_lt_iff_le_and_not_eqv(a, b);
+    // c ≤ 0 and a ≤ b → b*c ≤ a*c
+    lemma_le_mul_nonpos_flip::<F>(a, b, c);
+    // Need strict: b*c < a*c, i.e. b*c ≤ a*c and ¬(b*c ≡ a*c)
+    F::axiom_lt_iff_le_and_not_eqv(b.mul(c), a.mul(c));
+    // If b*c ≡ a*c, then by mul_cancel_right (since c ≢ 0): b ≡ a
+    F::axiom_eqv_symmetric(c, F::zero());
+    if b.mul(c).eqv(a.mul(c)) {
+        lemma_mul_cancel_right::<F>(b, a, c);
+        // b ≡ a, so a ≡ b
+        F::axiom_eqv_symmetric(b, a);
+        // But a < b means ¬(a ≡ b). Contradiction.
+    }
+}
+
 } // verus!

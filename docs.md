@@ -38,55 +38,61 @@
 
 ### Spec Functions
 
-- **`open spec fn abs`** — [inequalities/mod.rs:14](./src/inequalities/mod.rs#L14)
+- **`open spec fn abs`** — [inequalities/mod.rs:15](./src/inequalities/mod.rs#L15)
   > Absolute value: returns a if a ≥ 0, otherwise -a.
-- **`open spec fn signum`** — [inequalities/mod.rs:482](./src/inequalities/mod.rs#L482)
+- **`open spec fn signum`** — [inequalities/mod.rs:483](./src/inequalities/mod.rs#L483)
   > Signum function: returns 1 if a > 0, -1 if a < 0, 0 if a ≡ 0.
 
 ### Proof Functions
 
-- **`proof fn lemma_nonneg_add`** — [inequalities/mod.rs:19](./src/inequalities/mod.rs#L19)
+- **`proof fn lemma_nonneg_add`** — [inequalities/mod.rs:20](./src/inequalities/mod.rs#L20)
   > 0 ≤ a and 0 ≤ b implies 0 ≤ a + b.
-- **`proof fn lemma_abs_nonneg`** — [inequalities/mod.rs:33](./src/inequalities/mod.rs#L33)
+- **`proof fn lemma_abs_nonneg`** — [inequalities/mod.rs:34](./src/inequalities/mod.rs#L34)
   > 0 ≤ abs(a).
-- **`proof fn lemma_abs_zero`** — [inequalities/mod.rs:47](./src/inequalities/mod.rs#L47)
+- **`proof fn lemma_abs_zero`** — [inequalities/mod.rs:48](./src/inequalities/mod.rs#L48)
   > abs(0) ≡ 0.
-- **`proof fn lemma_abs_neg`** — [inequalities/mod.rs:56](./src/inequalities/mod.rs#L56)
+- **`proof fn lemma_abs_neg`** — [inequalities/mod.rs:57](./src/inequalities/mod.rs#L57)
   > abs(-a) ≡ abs(a).
-- **`proof fn lemma_abs_mul`** — [inequalities/mod.rs:84](./src/inequalities/mod.rs#L84)
+- **`proof fn lemma_abs_mul`** — [inequalities/mod.rs:85](./src/inequalities/mod.rs#L85)
   > abs(a * b) ≡ abs(a) * abs(b) for OrderedField.
-- **`proof fn lemma_triangle_inequality`** — [inequalities/mod.rs:156](./src/inequalities/mod.rs#L156)
+- **`proof fn lemma_triangle_inequality`** — [inequalities/mod.rs:157](./src/inequalities/mod.rs#L157)
   > Triangle inequality: abs(a + b) ≤ abs(a) + abs(b).
-- **`proof fn lemma_sum_squares_nonneg_2d`** — [inequalities/mod.rs:270](./src/inequalities/mod.rs#L270)
+- **`proof fn lemma_sum_squares_nonneg_2d`** — [inequalities/mod.rs:271](./src/inequalities/mod.rs#L271)
   > 0 ≤ a*a + b*b.
-- **`proof fn lemma_sum_squares_nonneg_3d`** — [inequalities/mod.rs:280](./src/inequalities/mod.rs#L280)
+- **`proof fn lemma_sum_squares_nonneg_3d`** — [inequalities/mod.rs:281](./src/inequalities/mod.rs#L281)
   > 0 ≤ a*a + b*b + c*c.
-- **`proof fn lemma_abs_eqv`** — [inequalities/mod.rs:290](./src/inequalities/mod.rs#L290)
+- **`proof fn lemma_abs_eqv`** — [inequalities/mod.rs:291](./src/inequalities/mod.rs#L291)
   > a ≡ b implies abs(a) ≡ abs(b).
-- **`proof fn lemma_abs_sub_symmetric`** — [inequalities/mod.rs:316](./src/inequalities/mod.rs#L316)
+- **`proof fn lemma_abs_sub_symmetric`** — [inequalities/mod.rs:317](./src/inequalities/mod.rs#L317)
   > abs(a - b) ≡ abs(b - a).
-- **`proof fn lemma_abs_le_iff`** — [inequalities/mod.rs:330](./src/inequalities/mod.rs#L330)
+- **`proof fn lemma_abs_le_iff`** — [inequalities/mod.rs:331](./src/inequalities/mod.rs#L331)
   > 0 ≤ b implies: abs(a) ≤ b if and only if b.neg() ≤ a and a ≤ b.
-- **`proof fn lemma_reverse_triangle`** — [inequalities/mod.rs:376](./src/inequalities/mod.rs#L376)
+- **`proof fn lemma_reverse_triangle`** — [inequalities/mod.rs:377](./src/inequalities/mod.rs#L377)
   > abs(abs(a) - abs(b)) ≤ abs(a - b)   (reverse triangle inequality).
-- **`proof fn lemma_signum_pos`** — [inequalities/mod.rs:489](./src/inequalities/mod.rs#L489)
+- **`proof fn lemma_signum_pos`** — [inequalities/mod.rs:490](./src/inequalities/mod.rs#L490)
   > 0 < a implies signum(a) ≡ 1.
-- **`proof fn lemma_signum_neg`** — [inequalities/mod.rs:499](./src/inequalities/mod.rs#L499)
+- **`proof fn lemma_signum_neg`** — [inequalities/mod.rs:500](./src/inequalities/mod.rs#L500)
   > a < 0 implies signum(a) ≡ -1.
-- **`proof fn lemma_signum_zero`** — [inequalities/mod.rs:511](./src/inequalities/mod.rs#L511)
+- **`proof fn lemma_signum_zero`** — [inequalities/mod.rs:512](./src/inequalities/mod.rs#L512)
   > signum(0) ≡ 0.
-- **`proof fn lemma_signum_neg_flip`** — [inequalities/mod.rs:520](./src/inequalities/mod.rs#L520)
+- **`proof fn lemma_signum_neg_flip`** — [inequalities/mod.rs:521](./src/inequalities/mod.rs#L521)
   > signum(-a) ≡ -signum(a).
-- **`proof fn lemma_signum_abs`** — [inequalities/mod.rs:607](./src/inequalities/mod.rs#L607)
+- **`proof fn lemma_signum_abs`** — [inequalities/mod.rs:608](./src/inequalities/mod.rs#L608)
   > signum(a) * abs(a) ≡ a.
-- **`proof fn lemma_signum_mul`** — [inequalities/mod.rs:653](./src/inequalities/mod.rs#L653)
+- **`proof fn lemma_signum_mul`** — [inequalities/mod.rs:654](./src/inequalities/mod.rs#L654)
   > signum(a*b) ≡ signum(a) * signum(b) (for OrderedField).
-- **`proof fn lemma_am_gm`** — [inequalities/mod.rs:772](./src/inequalities/mod.rs#L772)
+- **`proof fn lemma_am_gm`** — [inequalities/mod.rs:773](./src/inequalities/mod.rs#L773)
   > AM-GM inequality: 0 ≤ a and 0 ≤ b implies a*b ≤ (a*a + b*b) / two().
-- **`proof fn lemma_abs_mul_self`** — [inequalities/mod.rs:895](./src/inequalities/mod.rs#L895)
+- **`proof fn lemma_abs_mul_self`** — [inequalities/mod.rs:896](./src/inequalities/mod.rs#L896)
   > abs(a) * abs(a) ≡ a * a.
-- **`proof fn lemma_abs_pos_iff`** — [inequalities/mod.rs:911](./src/inequalities/mod.rs#L911)
+- **`proof fn lemma_abs_pos_iff`** — [inequalities/mod.rs:912](./src/inequalities/mod.rs#L912)
   > 0 < abs(a) if and only if ¬(a ≡ 0).
+- **`proof fn lemma_sum_squares_zero_2d`** — [inequalities/mod.rs:956](./src/inequalities/mod.rs#L956)
+  > a*a + b*b ≡ 0 implies a ≡ 0 and b ≡ 0 (for OrderedField).
+- **`proof fn lemma_sum_squares_zero_3d`** — [inequalities/mod.rs:1004](./src/inequalities/mod.rs#L1004)
+  > a*a + b*b + c*c ≡ 0 implies a ≡ 0 and b ≡ 0 and c ≡ 0 (for OrderedField).
+- **`proof fn lemma_cauchy_schwarz_2d`** — [inequalities/mod.rs:1193](./src/inequalities/mod.rs#L1193)
+  > Cauchy-Schwarz in 2D: (a*c + b*d)² ≤ (a²+b²)*(c²+d²) (for OrderedRing). Uses the Lagrange identity: (a²+b²)(c²+d²) = (ac+bd)² + (ad-bc)² ≥ (ac+bd)².
 
 ## `lemmas::additive_commutative_monoid_lemmas`
 
@@ -143,6 +149,10 @@
   > If a + e ≡ a for all a (witnessed by a=0), then e ≡ 0. Specifically: 0 + e ≡ 0 implies e ≡ 0.
 - **`proof fn lemma_neg_unique`** — [lemmas/additive_group_lemmas.rs:464](./src/lemmas/additive_group_lemmas.rs#L464)
   > If a + b ≡ 0, then b ≡ -a.
+- **`proof fn lemma_neg_congruence`** — [lemmas/additive_group_lemmas.rs:481](./src/lemmas/additive_group_lemmas.rs#L481)
+  > Negation respects equivalence: a ≡ b implies -a ≡ -b. Convenience wrapper around axiom_neg_congruence.
+- **`proof fn lemma_sub_add_sub`** — [lemmas/additive_group_lemmas.rs:491](./src/lemmas/additive_group_lemmas.rs#L491)
+  > Telescoping subtraction: (a - b) + (b - c) ≡ a - c.
 
 ## `lemmas::field_lemmas`
 
@@ -182,6 +192,10 @@
   > a/(-b) ≡ -(a/b) for nonzero b.
 - **`proof fn lemma_div_mul_div`** — [lemmas/field_lemmas.rs:523](./src/lemmas/field_lemmas.rs#L523)
   > (a/b) * (c/d) ≡ (a*c)/(b*d) for nonzero b, d.
+- **`proof fn lemma_recip_congruence`** — [lemmas/field_lemmas.rs:605](./src/lemmas/field_lemmas.rs#L605)
+  > Reciprocal respects equivalence: a ≡ b and a ≢ 0 implies recip(a) ≡ recip(b). Convenience wrapper around axiom_recip_congruence.
+- **`proof fn lemma_div_add_div`** — [lemmas/field_lemmas.rs:616](./src/lemmas/field_lemmas.rs#L616)
+  > a/b + c/d ≡ (a*d + c*b) / (b*d) for nonzero b, d.
 
 ## `lemmas::ordered_field_lemmas`
 
@@ -205,6 +219,8 @@
   > 0 < c and a*c ≤ b*c implies a ≤ b.
 - **`proof fn lemma_cross_mul_le`** — [lemmas/ordered_field_lemmas.rs:401](./src/lemmas/ordered_field_lemmas.rs#L401)
   > 0 < b and 0 < d implies: a/b ≤ c/d if and only if a*d ≤ c*b.
+- **`proof fn lemma_lt_mul_nonpos_flip`** — [lemmas/ordered_field_lemmas.rs:511](./src/lemmas/ordered_field_lemmas.rs#L511)
+  > c < 0 and a < b implies b*c < a*c (strict multiplication by negative flips order).
 
 ## `lemmas::ordered_ring_lemmas`
 
@@ -262,6 +278,10 @@
   > a < b and c < d implies a + c < b + d.
 - **`proof fn lemma_square_le_square`** — [lemmas/ordered_ring_lemmas.rs:592](./src/lemmas/ordered_ring_lemmas.rs#L592)
   > 0 ≤ a ≤ b implies a*a ≤ b*b.
+- **`proof fn lemma_le_iff_sub_nonneg`** — [lemmas/ordered_ring_lemmas.rs:619](./src/lemmas/ordered_ring_lemmas.rs#L619)
+  > a ≤ b if and only if 0 ≤ b - a.
+- **`proof fn lemma_le_mul_nonpos_flip`** — [lemmas/ordered_ring_lemmas.rs:650](./src/lemmas/ordered_ring_lemmas.rs#L650)
+  > c ≤ 0 and a ≤ b implies b*c ≤ a*c (multiplication by nonpositive flips order).
 
 ## `lemmas::partial_order_lemmas`
 
@@ -352,6 +372,24 @@
   > c ≤ max(a,b) if and only if c ≤ a or c ≤ b.
 - **`proof fn lemma_min_neg`** — [min_max/mod.rs:324](./src/min_max/mod.rs#L324)
   > min(a,b).neg() ≡ max(a.neg(), b.neg()).
+- **`proof fn lemma_max_neg`** — [min_max/mod.rs:363](./src/min_max/mod.rs#L363)
+  > max(a,b).neg() ≡ min(a.neg(), b.neg()).
+- **`proof fn lemma_min_add`** — [min_max/mod.rs:402](./src/min_max/mod.rs#L402)
+  > min(a+c, b+c) ≡ min(a,b) + c.
+- **`proof fn lemma_max_add`** — [min_max/mod.rs:433](./src/min_max/mod.rs#L433)
+  > max(a+c, b+c) ≡ max(a,b) + c.
+- **`proof fn lemma_min_mul_nonneg`** — [min_max/mod.rs:462](./src/min_max/mod.rs#L462)
+  > 0 ≤ c implies min(a*c, b*c) ≡ min(a,b) * c.
+- **`proof fn lemma_max_mul_nonneg`** — [min_max/mod.rs:492](./src/min_max/mod.rs#L492)
+  > 0 ≤ c implies max(a*c, b*c) ≡ max(a,b) * c.
+- **`proof fn lemma_min_mul_nonpos`** — [min_max/mod.rs:521](./src/min_max/mod.rs#L521)
+  > c ≤ 0 implies min(a*c, b*c) ≡ max(a,b) * c.
+- **`proof fn lemma_max_mul_nonpos`** — [min_max/mod.rs:552](./src/min_max/mod.rs#L552)
+  > c ≤ 0 implies max(a*c, b*c) ≡ min(a,b) * c.
+- **`proof fn lemma_min_absorption`** — [min_max/mod.rs:586](./src/min_max/mod.rs#L586)
+  > min(a, max(a, b)) ≡ a.
+- **`proof fn lemma_max_absorption`** — [min_max/mod.rs:601](./src/min_max/mod.rs#L601)
+  > max(a, min(a, b)) ≡ a.
 
 ## `number_theory`
 
@@ -381,37 +419,41 @@
 
 ### Spec Functions
 
-- **`open spec fn pow`** — [power/mod.rs:13](./src/power/mod.rs#L13)
+- **`open spec fn pow`** — [power/mod.rs:14](./src/power/mod.rs#L14)
   > Power function: base^exp.
 
 ### Proof Functions
 
-- **`proof fn lemma_pow_zero`** — [power/mod.rs:21](./src/power/mod.rs#L21)
+- **`proof fn lemma_pow_zero`** — [power/mod.rs:22](./src/power/mod.rs#L22)
   > pow(a, 0) ≡ 1.
-- **`proof fn lemma_pow_one`** — [power/mod.rs:29](./src/power/mod.rs#L29)
+- **`proof fn lemma_pow_one`** — [power/mod.rs:30](./src/power/mod.rs#L30)
   > pow(a, 1) ≡ a.
-- **`proof fn lemma_pow_two`** — [power/mod.rs:45](./src/power/mod.rs#L45)
+- **`proof fn lemma_pow_two`** — [power/mod.rs:46](./src/power/mod.rs#L46)
   > pow(a, 2) ≡ a * a.
-- **`proof fn lemma_pow_succ`** — [power/mod.rs:57](./src/power/mod.rs#L57)
+- **`proof fn lemma_pow_succ`** — [power/mod.rs:58](./src/power/mod.rs#L58)
   > pow(a, n+1) ≡ a * pow(a, n).
-- **`proof fn lemma_one_pow`** — [power/mod.rs:65](./src/power/mod.rs#L65)
+- **`proof fn lemma_one_pow`** — [power/mod.rs:66](./src/power/mod.rs#L66)
   > pow(1, n) ≡ 1.
-- **`proof fn lemma_zero_pow`** — [power/mod.rs:88](./src/power/mod.rs#L88)
+- **`proof fn lemma_zero_pow`** — [power/mod.rs:89](./src/power/mod.rs#L89)
   > n > 0 implies pow(0, n) ≡ 0.
-- **`proof fn lemma_pow_add`** — [power/mod.rs:100](./src/power/mod.rs#L100)
+- **`proof fn lemma_pow_add`** — [power/mod.rs:101](./src/power/mod.rs#L101)
   > pow(a, m + n) ≡ pow(a, m) * pow(a, n).
-- **`proof fn lemma_pow_mul`** — [power/mod.rs:135](./src/power/mod.rs#L135)
+- **`proof fn lemma_pow_mul`** — [power/mod.rs:136](./src/power/mod.rs#L136)
   > pow(a, m * n) ≡ pow(pow(a, m), n).
-- **`proof fn lemma_pow_nonneg`** — [power/mod.rs:167](./src/power/mod.rs#L167)
+- **`proof fn lemma_pow_nonneg`** — [power/mod.rs:168](./src/power/mod.rs#L168)
   > 0 ≤ a implies 0 ≤ pow(a, n).
-- **`proof fn lemma_pow_monotone`** — [power/mod.rs:185](./src/power/mod.rs#L185)
+- **`proof fn lemma_pow_monotone`** — [power/mod.rs:186](./src/power/mod.rs#L186)
   > 0 ≤ a ≤ b implies pow(a, n) ≤ pow(b, n).
-- **`proof fn lemma_pow_eqv`** — [power/mod.rs:235](./src/power/mod.rs#L235)
+- **`proof fn lemma_pow_eqv`** — [power/mod.rs:236](./src/power/mod.rs#L236)
   > a ≡ b implies pow(a, n) ≡ pow(b, n).
-- **`proof fn lemma_pow_pos`** — [power/mod.rs:254](./src/power/mod.rs#L254)
+- **`proof fn lemma_pow_pos`** — [power/mod.rs:255](./src/power/mod.rs#L255)
   > 0 < a implies 0 < pow(a, n) (for OrderedField).
-- **`proof fn lemma_pow_mul_base`** — [power/mod.rs:273](./src/power/mod.rs#L273)
+- **`proof fn lemma_pow_mul_base`** — [power/mod.rs:274](./src/power/mod.rs#L274)
   > pow(a*b, n) ≡ pow(a, n) * pow(b, n).
-- **`proof fn lemma_pow_neg_one_even`** — [power/mod.rs:362](./src/power/mod.rs#L362)
+- **`proof fn lemma_pow_neg_one_even`** — [power/mod.rs:363](./src/power/mod.rs#L363)
   > pow((-1), 2*n) ≡ 1.
+- **`proof fn lemma_pow_nonzero`** — [power/mod.rs:416](./src/power/mod.rs#L416)
+  > ¬a≡0 implies ¬pow(a,n)≡0 (for Field).
+- **`proof fn lemma_pow_recip`** — [power/mod.rs:436](./src/power/mod.rs#L436)
+  > ¬a≡0 implies pow(recip(a), n) ≡ recip(pow(a, n)) (for Field).
 

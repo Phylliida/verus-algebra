@@ -1,11 +1,12 @@
 use vstd::prelude::*;
 use crate::traits::ring::Ring;
 use crate::traits::ordered_ring::OrderedRing;
-use crate::traits::field::OrderedField;
+use crate::traits::field::{Field, OrderedField};
 use crate::lemmas::additive_group_lemmas::*;
 use crate::lemmas::ring_lemmas::*;
 use crate::lemmas::ordered_ring_lemmas::*;
 use crate::lemmas::ordered_field_lemmas::*;
+use crate::lemmas::field_lemmas::*;
 
 verus! {
 
@@ -408,6 +409,77 @@ pub proof fn lemma_pow_neg_one_even<R: Ring>(n: nat)
             R::one().mul(R::one()),
             R::one(),
         );
+    }
+}
+
+/// ¬a≡0 implies ¬pow(a,n)≡0 (for Field).
+pub proof fn lemma_pow_nonzero<F: Field>(a: F, n: nat)
+    requires
+        !a.eqv(F::zero()),
+    ensures
+        !pow::<F>(a, n).eqv(F::zero()),
+    decreases n,
+{
+    if n == 0 {
+        // pow(a, 0) = 1, 1 ≢ 0
+        F::axiom_one_ne_zero();
+    } else {
+        // pow(a, n) = a * pow(a, n-1)
+        // By IH, pow(a, n-1) ≢ 0
+        lemma_pow_nonzero::<F>(a, (n - 1) as nat);
+        // a ≢ 0 and pow(a,n-1) ≢ 0 → a*pow(a,n-1) ≢ 0
+        lemma_nonzero_product::<F>(a, pow::<F>(a, (n - 1) as nat));
+    }
+}
+
+/// ¬a≡0 implies pow(recip(a), n) ≡ recip(pow(a, n)) (for Field).
+pub proof fn lemma_pow_recip<F: Field>(a: F, n: nat)
+    requires
+        !a.eqv(F::zero()),
+    ensures
+        pow::<F>(a.recip(), n).eqv(pow::<F>(a, n).recip()),
+    decreases n,
+{
+    if n == 0 {
+        // pow(recip(a), 0) = 1, pow(a, 0) = 1, recip(1) ≡ 1
+        // Need: 1 ≡ recip(1)
+        F::axiom_one_ne_zero();
+        F::axiom_mul_recip_right(F::one());
+        // 1*recip(1) ≡ 1, and 1*recip(1) ≡ recip(1) [mul_one_left]
+        lemma_mul_one_left::<F>(F::one().recip());
+        // recip(1) ≡ 1*recip(1) ≡ 1
+        F::axiom_eqv_symmetric(F::one().mul(F::one().recip()), F::one().recip());
+        F::axiom_eqv_transitive(F::one().recip(), F::one().mul(F::one().recip()), F::one());
+        F::axiom_eqv_symmetric(F::one().recip(), F::one());
+    } else {
+        // pow(recip(a), n) = recip(a) * pow(recip(a), n-1)
+        // IH: pow(recip(a), n-1) ≡ recip(pow(a, n-1))
+        lemma_pow_recip::<F>(a, (n - 1) as nat);
+
+        // recip(a) * pow(recip(a), n-1) ≡ recip(a) * recip(pow(a, n-1))
+        lemma_mul_congruence_right::<F>(
+            a.recip(),
+            pow::<F>(a.recip(), (n - 1) as nat),
+            pow::<F>(a, (n - 1) as nat).recip(),
+        );
+
+        // recip(a) * recip(pow(a,n-1)) ≡ recip(a * pow(a,n-1))  [recip_mul, reversed]
+        lemma_pow_nonzero::<F>(a, (n - 1) as nat);
+        lemma_recip_mul::<F>(a, pow::<F>(a, (n - 1) as nat));
+        F::axiom_eqv_symmetric(
+            a.mul(pow::<F>(a, (n - 1) as nat)).recip(),
+            a.recip().mul(pow::<F>(a, (n - 1) as nat).recip()),
+        );
+
+        // Chain: recip(a)*pow(recip(a),n-1) ≡ recip(a)*recip(pow(a,n-1)) ≡ recip(a*pow(a,n-1))
+        F::axiom_eqv_transitive(
+            a.recip().mul(pow::<F>(a.recip(), (n - 1) as nat)),
+            a.recip().mul(pow::<F>(a, (n - 1) as nat).recip()),
+            a.mul(pow::<F>(a, (n - 1) as nat)).recip(),
+        );
+
+        // a*pow(a,n-1) = pow(a, n) — this is definitional equality for the spec function
+        // pow(a,n) = a*pow(a,n-1), so recip(a*pow(a,n-1)) = recip(pow(a,n))
     }
 }
 

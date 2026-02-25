@@ -359,4 +359,257 @@ pub proof fn lemma_min_neg<R: OrderedRing>(a: R, b: R)
     }
 }
 
+/// max(a,b).neg() ≡ min(a.neg(), b.neg()).
+pub proof fn lemma_max_neg<R: OrderedRing>(a: R, b: R)
+    ensures
+        max::<R>(a, b).neg().eqv(min::<R>(a.neg(), b.neg())),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // max(a,b) = b, so LHS = -b
+        // Need: -b = min(-a, -b)
+        // a ≤ b → -b ≤ -a, so min(-a,-b) = min(-a,-b)
+        lemma_le_neg_flip::<R>(a, b);
+        // -b ≤ -a
+        R::axiom_le_total(a.neg(), b.neg());
+        if a.neg().le(b.neg()) {
+            // min(-a,-b) = -a, and -b ≤ -a and -a ≤ -b, so -a ≡ -b
+            R::axiom_le_antisymmetric(a.neg(), b.neg());
+            R::axiom_eqv_symmetric(a.neg(), b.neg());
+        } else {
+            // min(-a,-b) = -b
+            R::axiom_eqv_reflexive(b.neg());
+        }
+    } else {
+        // max(a,b) = a, so LHS = -a
+        // ¬(a ≤ b), so b ≤ a (totality). -a ≤ -b.
+        lemma_le_neg_flip::<R>(b, a);
+        // -a ≤ -b, so min(-a,-b) = -a
+        R::axiom_le_total(a.neg(), b.neg());
+        if a.neg().le(b.neg()) {
+            // min = -a
+            R::axiom_eqv_reflexive(a.neg());
+        } else {
+            // ¬(-a ≤ -b), but we proved -a ≤ -b... contradiction
+            // Actually -a ≤ -b from le_neg_flip, and ¬(-a ≤ -b) can't both hold
+            R::axiom_le_antisymmetric(a.neg(), b.neg());
+            R::axiom_eqv_symmetric(a.neg(), b.neg());
+        }
+    }
+}
+
+/// min(a+c, b+c) ≡ min(a,b) + c.
+pub proof fn lemma_min_add<R: OrderedRing>(a: R, b: R, c: R)
+    ensures
+        min::<R>(a.add(c), b.add(c)).eqv(min::<R>(a, b).add(c)),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // min(a,b) = a, so RHS = a+c
+        // a ≤ b → a+c ≤ b+c
+        R::axiom_le_add_monotone(a, b, c);
+        // min(a+c, b+c) = a+c
+        R::axiom_eqv_reflexive(a.add(c));
+    } else {
+        // min(a,b) = b, so RHS = b+c
+        // ¬(a ≤ b), so b ≤ a → b+c ≤ a+c
+        R::axiom_le_add_monotone(b, a, c);
+        // min(a+c, b+c): since ¬(a+c ≤ b+c)? Need to check
+        // b ≤ a → b+c ≤ a+c. Also: if a+c ≤ b+c, then by cancellation a ≤ b, contradiction
+        R::axiom_le_total(a.add(c), b.add(c));
+        if a.add(c).le(b.add(c)) {
+            // a+c ≤ b+c and b+c ≤ a+c, so a+c ≡ b+c
+            R::axiom_le_antisymmetric(a.add(c), b.add(c));
+            // min(a+c,b+c) = a+c ≡ b+c = RHS (since a+c ≡ b+c)
+            R::axiom_eqv_symmetric(a.add(c), b.add(c));
+        } else {
+            // min(a+c, b+c) = b+c
+            R::axiom_eqv_reflexive(b.add(c));
+        }
+    }
+}
+
+/// max(a+c, b+c) ≡ max(a,b) + c.
+pub proof fn lemma_max_add<R: OrderedRing>(a: R, b: R, c: R)
+    ensures
+        max::<R>(a.add(c), b.add(c)).eqv(max::<R>(a, b).add(c)),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // max(a,b) = b, so RHS = b+c
+        // a ≤ b → a+c ≤ b+c
+        R::axiom_le_add_monotone(a, b, c);
+        // max(a+c, b+c) = b+c
+        R::axiom_eqv_reflexive(b.add(c));
+    } else {
+        // max(a,b) = a, so RHS = a+c
+        // b ≤ a → b+c ≤ a+c
+        R::axiom_le_add_monotone(b, a, c);
+        R::axiom_le_total(a.add(c), b.add(c));
+        if a.add(c).le(b.add(c)) {
+            // a+c ≤ b+c and b+c ≤ a+c → a+c ≡ b+c
+            R::axiom_le_antisymmetric(a.add(c), b.add(c));
+            // max(a+c,b+c) = b+c (since a+c ≤ b+c), need b+c ≡ a+c
+            R::axiom_eqv_symmetric(a.add(c), b.add(c));
+        } else {
+            // max(a+c, b+c) = a+c
+            R::axiom_eqv_reflexive(a.add(c));
+        }
+    }
+}
+
+/// 0 ≤ c implies min(a*c, b*c) ≡ min(a,b) * c.
+pub proof fn lemma_min_mul_nonneg<R: OrderedRing>(a: R, b: R, c: R)
+    requires
+        R::zero().le(c),
+    ensures
+        min::<R>(a.mul(c), b.mul(c)).eqv(min::<R>(a, b).mul(c)),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // min(a,b) = a, so RHS = a*c
+        // a ≤ b and 0 ≤ c → a*c ≤ b*c
+        R::axiom_le_mul_nonneg_monotone(a, b, c);
+        // min(a*c, b*c) = a*c
+        R::axiom_eqv_reflexive(a.mul(c));
+    } else {
+        // min(a,b) = b, so RHS = b*c
+        // b ≤ a and 0 ≤ c → b*c ≤ a*c
+        R::axiom_le_mul_nonneg_monotone(b, a, c);
+        R::axiom_le_total(a.mul(c), b.mul(c));
+        if a.mul(c).le(b.mul(c)) {
+            // a*c ≤ b*c and b*c ≤ a*c → a*c ≡ b*c
+            R::axiom_le_antisymmetric(a.mul(c), b.mul(c));
+            R::axiom_eqv_symmetric(a.mul(c), b.mul(c));
+        } else {
+            // min(a*c, b*c) = b*c
+            R::axiom_eqv_reflexive(b.mul(c));
+        }
+    }
+}
+
+/// 0 ≤ c implies max(a*c, b*c) ≡ max(a,b) * c.
+pub proof fn lemma_max_mul_nonneg<R: OrderedRing>(a: R, b: R, c: R)
+    requires
+        R::zero().le(c),
+    ensures
+        max::<R>(a.mul(c), b.mul(c)).eqv(max::<R>(a, b).mul(c)),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // max(a,b) = b, so RHS = b*c
+        // a ≤ b and 0 ≤ c → a*c ≤ b*c
+        R::axiom_le_mul_nonneg_monotone(a, b, c);
+        // max(a*c, b*c) = b*c
+        R::axiom_eqv_reflexive(b.mul(c));
+    } else {
+        // max(a,b) = a, so RHS = a*c
+        R::axiom_le_mul_nonneg_monotone(b, a, c);
+        R::axiom_le_total(a.mul(c), b.mul(c));
+        if a.mul(c).le(b.mul(c)) {
+            // a*c ≤ b*c and b*c ≤ a*c → a*c ≡ b*c
+            R::axiom_le_antisymmetric(a.mul(c), b.mul(c));
+            // max = b*c (since a*c ≤ b*c), need b*c ≡ a*c
+            R::axiom_eqv_symmetric(a.mul(c), b.mul(c));
+        } else {
+            R::axiom_eqv_reflexive(a.mul(c));
+        }
+    }
+}
+
+/// c ≤ 0 implies min(a*c, b*c) ≡ max(a,b) * c.
+pub proof fn lemma_min_mul_nonpos<R: OrderedRing>(a: R, b: R, c: R)
+    requires
+        c.le(R::zero()),
+    ensures
+        min::<R>(a.mul(c), b.mul(c)).eqv(max::<R>(a, b).mul(c)),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // max(a,b) = b, so RHS = b*c
+        // a ≤ b and c ≤ 0 → b*c ≤ a*c [le_mul_nonpos_flip]
+        lemma_le_mul_nonpos_flip::<R>(a, b, c);
+        // min(a*c, b*c): since b*c ≤ a*c
+        R::axiom_le_total(a.mul(c), b.mul(c));
+        if a.mul(c).le(b.mul(c)) {
+            // a*c ≤ b*c and b*c ≤ a*c → a*c ≡ b*c
+            R::axiom_le_antisymmetric(a.mul(c), b.mul(c));
+            // min = a*c ≡ b*c
+        } else {
+            // min(a*c, b*c) = b*c
+            R::axiom_eqv_reflexive(b.mul(c));
+        }
+    } else {
+        // max(a,b) = a, so RHS = a*c
+        // b ≤ a and c ≤ 0 → a*c ≤ b*c
+        lemma_le_mul_nonpos_flip::<R>(b, a, c);
+        // min(a*c, b*c): a*c ≤ b*c, so min = a*c
+        R::axiom_eqv_reflexive(a.mul(c));
+    }
+}
+
+/// c ≤ 0 implies max(a*c, b*c) ≡ min(a,b) * c.
+pub proof fn lemma_max_mul_nonpos<R: OrderedRing>(a: R, b: R, c: R)
+    requires
+        c.le(R::zero()),
+    ensures
+        max::<R>(a.mul(c), b.mul(c)).eqv(min::<R>(a, b).mul(c)),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // min(a,b) = a, so RHS = a*c
+        // a ≤ b and c ≤ 0 → b*c ≤ a*c
+        lemma_le_mul_nonpos_flip::<R>(a, b, c);
+        // max(a*c, b*c): b*c ≤ a*c, so max = a*c
+        R::axiom_le_total(a.mul(c), b.mul(c));
+        if a.mul(c).le(b.mul(c)) {
+            R::axiom_le_antisymmetric(a.mul(c), b.mul(c));
+            R::axiom_eqv_symmetric(a.mul(c), b.mul(c));
+        } else {
+            R::axiom_eqv_reflexive(a.mul(c));
+        }
+    } else {
+        // min(a,b) = b, so RHS = b*c
+        // b ≤ a and c ≤ 0 → a*c ≤ b*c
+        lemma_le_mul_nonpos_flip::<R>(b, a, c);
+        // max(a*c, b*c): a*c ≤ b*c, so max = b*c
+        R::axiom_le_total(a.mul(c), b.mul(c));
+        if a.mul(c).le(b.mul(c)) {
+            R::axiom_eqv_reflexive(b.mul(c));
+        } else {
+            R::axiom_le_antisymmetric(a.mul(c), b.mul(c));
+        }
+    }
+}
+
+/// min(a, max(a, b)) ≡ a.
+pub proof fn lemma_min_absorption<R: OrderedRing>(a: R, b: R)
+    ensures
+        min::<R>(a, max::<R>(a, b)).eqv(a),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // max(a,b) = b, min(a,b) = a (since a ≤ b)
+        R::axiom_eqv_reflexive(a);
+    } else {
+        // max(a,b) = a, min(a,a) ≡ a
+        lemma_min_self::<R>(a);
+    }
+}
+
+/// max(a, min(a, b)) ≡ a.
+pub proof fn lemma_max_absorption<R: OrderedRing>(a: R, b: R)
+    ensures
+        max::<R>(a, min::<R>(a, b)).eqv(a),
+{
+    R::axiom_le_total(a, b);
+    if a.le(b) {
+        // min(a,b) = a, max(a,a) ≡ a
+        lemma_max_self::<R>(a);
+    } else {
+        // min(a,b) = b, max(a,b) = a (since ¬(a ≤ b), max = a)
+        R::axiom_eqv_reflexive(a);
+    }
+}
+
 } // verus!
