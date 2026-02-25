@@ -8,7 +8,7 @@ Defines abstract algebraic interfaces (`Equivalence`, `AdditiveGroup`, `Ring`, `
 Requires [Verus](https://github.com/verus-lang/verus) built in `../verus/`.
 
 ```bash
-./scripts/check.sh --require-verus --forbid-trusted-escapes --min-verified 26
+./scripts/check.sh --require-verus --forbid-trusted-escapes --min-verified 131
 ```
 
 ## License

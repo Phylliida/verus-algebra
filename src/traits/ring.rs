@@ -48,6 +48,13 @@ pub trait Ring: AdditiveGroup {
             a.mul(b.add(c)).eqv(a.mul(b).add(a.mul(c))),
     ;
 
+    // ---- axioms: non-degeneracy ----
+
+    /// The multiplicative and additive identities are distinct: 1 ≢ 0.
+    proof fn axiom_one_ne_zero()
+        ensures !Self::one().eqv(Self::zero()),
+    ;
+
     // ---- axioms: congruence ----
 
     /// Multiplication respects equivalence on the left.
