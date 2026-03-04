@@ -1519,4 +1519,680 @@ pub proof fn lemma_cauchy_schwarz_2d<R: OrderedRing>(a: R, b: R, c: R, d: R)
     );
 }
 
+/// 0 ≤ a*a + b*b + c*c + d*d.
+pub proof fn lemma_sum_squares_nonneg_4d<R: OrderedRing>(a: R, b: R, c: R, d: R)
+    ensures
+        R::zero().le(a.mul(a).add(b.mul(b)).add(c.mul(c)).add(d.mul(d))),
+{
+    lemma_sum_squares_nonneg_3d::<R>(a, b, c);
+    lemma_square_nonneg::<R>(d);
+    lemma_nonneg_add::<R>(a.mul(a).add(b.mul(b)).add(c.mul(c)), d.mul(d));
+}
+
+/// Helper: 2*x*y ≤ x*x + y*y for any x, y in an ordered ring.
+/// Follows from (x - y)² ≥ 0.
+proof fn lemma_two_mul_le_sum_sq<R: OrderedRing>(x: R, y: R)
+    ensures
+        R::one().add(R::one()).mul(x.mul(y)).le(x.mul(x).add(y.mul(y))),
+{
+    let two = R::one().add(R::one());
+
+    // 0 ≤ (x-y)²
+    lemma_square_nonneg::<R>(x.sub(y));
+    // (x-y)² ≡ x² - 2xy + y²
+    lemma_square_sub_expand::<R>(x, y);
+    // 0 ≤ x² - 2xy + y²
+    lemma_le_congruence_right::<R>(
+        R::zero(),
+        x.sub(y).mul(x.sub(y)),
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y)),
+    );
+
+    // Add 2xy to both sides: 2xy ≤ (x² - 2xy + y²) + 2xy
+    R::axiom_le_add_monotone(
+        R::zero(),
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y)),
+        two.mul(x.mul(y)),
+    );
+    // LHS: 0 + 2xy ≡ 2xy
+    lemma_add_zero_left::<R>(two.mul(x.mul(y)));
+    lemma_le_congruence_left::<R>(
+        R::zero().add(two.mul(x.mul(y))),
+        two.mul(x.mul(y)),
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y)).add(two.mul(x.mul(y))),
+    );
+
+    // RHS: (x² - 2xy + y²) + 2xy ≡ x² + y²
+    // Use the same rearrangement as the 2D CS proof.
+    // ((x²-2xy) + y²) + 2xy
+    // ≡ (x²-2xy) + (y² + 2xy)     [assoc]
+    R::axiom_add_associative(
+        x.mul(x).sub(two.mul(x.mul(y))),
+        y.mul(y),
+        two.mul(x.mul(y)),
+    );
+    // y² + 2xy ≡ 2xy + y²         [comm]
+    R::axiom_add_commutative(y.mul(y), two.mul(x.mul(y)));
+    lemma_add_congruence_right::<R>(
+        x.mul(x).sub(two.mul(x.mul(y))),
+        y.mul(y).add(two.mul(x.mul(y))),
+        two.mul(x.mul(y)).add(y.mul(y)),
+    );
+    R::axiom_eqv_transitive(
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y)).add(two.mul(x.mul(y))),
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y).add(two.mul(x.mul(y)))),
+        x.mul(x).sub(two.mul(x.mul(y))).add(two.mul(x.mul(y)).add(y.mul(y))),
+    );
+    // (x²-2xy) + (2xy + y²) ≡ ((x²-2xy)+2xy) + y²  [assoc reversed]
+    R::axiom_add_associative(
+        x.mul(x).sub(two.mul(x.mul(y))),
+        two.mul(x.mul(y)),
+        y.mul(y),
+    );
+    R::axiom_eqv_symmetric(
+        x.mul(x).sub(two.mul(x.mul(y))).add(two.mul(x.mul(y))).add(y.mul(y)),
+        x.mul(x).sub(two.mul(x.mul(y))).add(two.mul(x.mul(y)).add(y.mul(y))),
+    );
+    R::axiom_eqv_transitive(
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y)).add(two.mul(x.mul(y))),
+        x.mul(x).sub(two.mul(x.mul(y))).add(two.mul(x.mul(y)).add(y.mul(y))),
+        x.mul(x).sub(two.mul(x.mul(y))).add(two.mul(x.mul(y))).add(y.mul(y)),
+    );
+    // (x²-2xy)+2xy ≡ x²  [sub_then_add_cancel]
+    lemma_sub_then_add_cancel::<R>(x.mul(x), two.mul(x.mul(y)));
+    R::axiom_add_congruence_left(
+        x.mul(x).sub(two.mul(x.mul(y))).add(two.mul(x.mul(y))),
+        x.mul(x),
+        y.mul(y),
+    );
+    R::axiom_eqv_transitive(
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y)).add(two.mul(x.mul(y))),
+        x.mul(x).sub(two.mul(x.mul(y))).add(two.mul(x.mul(y))).add(y.mul(y)),
+        x.mul(x).add(y.mul(y)),
+    );
+
+    // So: 2xy ≤ x² + y²
+    lemma_le_congruence_right::<R>(
+        two.mul(x.mul(y)),
+        x.mul(x).sub(two.mul(x.mul(y))).add(y.mul(y)).add(two.mul(x.mul(y))),
+        x.mul(x).add(y.mul(y)),
+    );
+}
+
+/// Cross-term bound for 4D Cauchy-Schwarz:
+/// 2*(a1*b1+a2*b2)*(a3*b3+a4*b4) ≤ (a1²+a2²)(b3²+b4²) + (a3²+a4²)(b1²+b2²)
+///
+/// Proof: expand the product, apply mul_four_commute to each of the 4 terms
+/// to get cross products, then apply 2xy ≤ x²+y² to each cross product,
+/// sum, convert squares with square_mul, and factor via distributivity.
+proof fn lemma_cross_term_bound_4d<R: OrderedRing>(
+    a1: R, a2: R, a3: R, a4: R,
+    b1: R, b2: R, b3: R, b4: R,
+)
+    ensures
+        R::one().add(R::one()).mul(
+            a1.mul(b1).add(a2.mul(b2)).mul(a3.mul(b3).add(a4.mul(b4)))
+        ).le(
+            a1.mul(a1).add(a2.mul(a2)).mul(b3.mul(b3).add(b4.mul(b4)))
+                .add(a3.mul(a3).add(a4.mul(a4)).mul(b1.mul(b1).add(b2.mul(b2))))
+        ),
+{
+    let two = R::one().add(R::one());
+    let p12 = a1.mul(b1).add(a2.mul(b2));
+    let p34 = a3.mul(b3).add(a4.mul(b4));
+
+    // Abbreviations for squared norms
+    let alpha = a1.mul(a1).add(a2.mul(a2));  // a1²+a2²
+    let beta  = b1.mul(b1).add(b2.mul(b2));  // b1²+b2²
+    let gamma = a3.mul(a3).add(a4.mul(a4));  // a3²+a4²
+    let delta = b3.mul(b3).add(b4.mul(b4));  // b3²+b4²
+
+    // ══════════════════════════════════════════════════════════════
+    // Step 1: Expand p12 * p34 via distributivity
+    // (a1b1+a2b2)(a3b3+a4b4)
+    //   ≡ (a1b1)(a3b3) + (a1b1)(a4b4) + (a2b2)(a3b3) + (a2b2)(a4b4)
+    // ══════════════════════════════════════════════════════════════
+
+    // Left distrib: p12 * p34 ≡ p12*a3b3 + p12*a4b4
+    R::axiom_mul_distributes_left(p12, a3.mul(b3), a4.mul(b4));
+
+    // Right distrib on p12*a3b3: (a1b1+a2b2)*a3b3 ≡ (a1b1)(a3b3) + (a2b2)(a3b3)
+    lemma_mul_distributes_right::<R>(a1.mul(b1), a2.mul(b2), a3.mul(b3));
+
+    // Right distrib on p12*a4b4: (a1b1+a2b2)*a4b4 ≡ (a1b1)(a4b4) + (a2b2)(a4b4)
+    lemma_mul_distributes_right::<R>(a1.mul(b1), a2.mul(b2), a4.mul(b4));
+
+    // Combine: p12*p34 ≡ ((a1b1)(a3b3)+(a2b2)(a3b3)) + ((a1b1)(a4b4)+(a2b2)(a4b4))
+    let t13 = a1.mul(b1).mul(a3.mul(b3));
+    let t23 = a2.mul(b2).mul(a3.mul(b3));
+    let t14 = a1.mul(b1).mul(a4.mul(b4));
+    let t24 = a2.mul(b2).mul(a4.mul(b4));
+
+    lemma_add_congruence::<R>(
+        p12.mul(a3.mul(b3)), t13.add(t23),
+        p12.mul(a4.mul(b4)), t14.add(t24),
+    );
+    R::axiom_eqv_transitive(
+        p12.mul(p34),
+        p12.mul(a3.mul(b3)).add(p12.mul(a4.mul(b4))),
+        t13.add(t23).add(t14.add(t24)),
+    );
+
+    // Rearrange to t13+t14+t23+t24 via rearrange_2x2
+    // (t13+t23)+(t14+t24) ≡ (t13+t14)+(t23+t24)
+    lemma_add_rearrange_2x2::<R>(t13, t23, t14, t24);
+    R::axiom_eqv_transitive(
+        p12.mul(p34),
+        t13.add(t23).add(t14.add(t24)),
+        t13.add(t14).add(t23.add(t24)),
+    );
+
+    // ══════════════════════════════════════════════════════════════
+    // Step 2: Apply mul_four_commute to each term
+    // (a1b1)(a3b3) ≡ (a1b3)(a3b1), etc.
+    // ══════════════════════════════════════════════════════════════
+
+    let c13 = a1.mul(b3).mul(a3.mul(b1));
+    let c14 = a1.mul(b4).mul(a4.mul(b1));
+    let c23 = a2.mul(b3).mul(a3.mul(b2));
+    let c24 = a2.mul(b4).mul(a4.mul(b2));
+
+    lemma_mul_four_commute::<R>(a1, a3, b1, b3);  // t13 ≡ c13
+    lemma_mul_four_commute::<R>(a1, a4, b1, b4);  // t14 ≡ c14
+    lemma_mul_four_commute::<R>(a2, a3, b2, b3);  // t23 ≡ c23
+    lemma_mul_four_commute::<R>(a2, a4, b2, b4);  // t24 ≡ c24
+
+    // Propagate congruences through the sums
+    lemma_add_congruence::<R>(t13, c13, t14, c14);
+    lemma_add_congruence::<R>(t23, c23, t24, c24);
+    lemma_add_congruence::<R>(
+        t13.add(t14), c13.add(c14),
+        t23.add(t24), c23.add(c24),
+    );
+    R::axiom_eqv_transitive(
+        p12.mul(p34),
+        t13.add(t14).add(t23.add(t24)),
+        c13.add(c14).add(c23.add(c24)),
+    );
+
+    // ══════════════════════════════════════════════════════════════
+    // Step 3: Apply 2xy ≤ x²+y² to each cross product
+    // ══════════════════════════════════════════════════════════════
+
+    lemma_two_mul_le_sum_sq::<R>(a1.mul(b3), a3.mul(b1));
+    lemma_two_mul_le_sum_sq::<R>(a1.mul(b4), a4.mul(b1));
+    lemma_two_mul_le_sum_sq::<R>(a2.mul(b3), a3.mul(b2));
+    lemma_two_mul_le_sum_sq::<R>(a2.mul(b4), a4.mul(b2));
+
+    // Sum the first two: 2*c13 + 2*c14 ≤ (sq13+sq31) + (sq14+sq41)
+    let sq13 = a1.mul(b3).mul(a1.mul(b3));
+    let sq31 = a3.mul(b1).mul(a3.mul(b1));
+    let sq14 = a1.mul(b4).mul(a1.mul(b4));
+    let sq41 = a4.mul(b1).mul(a4.mul(b1));
+    let sq23 = a2.mul(b3).mul(a2.mul(b3));
+    let sq32 = a3.mul(b2).mul(a3.mul(b2));
+    let sq24 = a2.mul(b4).mul(a2.mul(b4));
+    let sq42 = a4.mul(b2).mul(a4.mul(b2));
+
+    lemma_le_add_both::<R>(
+        two.mul(c13), sq13.add(sq31),
+        two.mul(c14), sq14.add(sq41),
+    );
+    lemma_le_add_both::<R>(
+        two.mul(c23), sq23.add(sq32),
+        two.mul(c24), sq24.add(sq42),
+    );
+    lemma_le_add_both::<R>(
+        two.mul(c13).add(two.mul(c14)),
+        sq13.add(sq31).add(sq14.add(sq41)),
+        two.mul(c23).add(two.mul(c24)),
+        sq23.add(sq32).add(sq24.add(sq42)),
+    );
+
+    // ══════════════════════════════════════════════════════════════
+    // Step 4: LHS ≡ 2*(p12*p34), show:
+    // 2*c13+2*c14+2*c23+2*c24 ≡ 2*(c13+c14+c23+c24) ≡ 2*(p12*p34)
+    // ══════════════════════════════════════════════════════════════
+
+    // 2*(c13+c14) ≡ 2*c13 + 2*c14  [left distrib]
+    R::axiom_mul_distributes_left(two, c13, c14);
+    R::axiom_eqv_symmetric(two.mul(c13).add(two.mul(c14)), two.mul(c13.add(c14)));
+
+    // 2*(c23+c24) ≡ 2*c23 + 2*c24  [left distrib]
+    R::axiom_mul_distributes_left(two, c23, c24);
+    R::axiom_eqv_symmetric(two.mul(c23).add(two.mul(c24)), two.mul(c23.add(c24)));
+
+    // (2*c13+2*c14) + (2*c23+2*c24) ≡ 2*(c13+c14) + 2*(c23+c24)
+    lemma_add_congruence::<R>(
+        two.mul(c13).add(two.mul(c14)), two.mul(c13.add(c14)),
+        two.mul(c23).add(two.mul(c24)), two.mul(c23.add(c24)),
+    );
+
+    // 2*(c13+c14) + 2*(c23+c24) ≡ 2*((c13+c14)+(c23+c24))  [left distrib]
+    R::axiom_mul_distributes_left(two, c13.add(c14), c23.add(c24));
+    R::axiom_eqv_symmetric(
+        two.mul(c13.add(c14)).add(two.mul(c23.add(c24))),
+        two.mul(c13.add(c14).add(c23.add(c24))),
+    );
+
+    R::axiom_eqv_transitive(
+        two.mul(c13).add(two.mul(c14)).add(two.mul(c23).add(two.mul(c24))),
+        two.mul(c13.add(c14)).add(two.mul(c23.add(c24))),
+        two.mul(c13.add(c14).add(c23.add(c24))),
+    );
+
+    // c13+c14+c23+c24 ≡ p12*p34
+    R::axiom_eqv_symmetric(p12.mul(p34), c13.add(c14).add(c23.add(c24)));
+    lemma_mul_congruence_right::<R>(
+        two,
+        c13.add(c14).add(c23.add(c24)),
+        p12.mul(p34),
+    );
+    R::axiom_eqv_transitive(
+        two.mul(c13).add(two.mul(c14)).add(two.mul(c23).add(two.mul(c24))),
+        two.mul(c13.add(c14).add(c23.add(c24))),
+        two.mul(p12.mul(p34)),
+    );
+
+    // Apply congruence to LHS of inequality
+    R::axiom_eqv_symmetric(
+        two.mul(c13).add(two.mul(c14)).add(two.mul(c23).add(two.mul(c24))),
+        two.mul(p12.mul(p34)),
+    );
+    lemma_le_congruence_left::<R>(
+        two.mul(c13).add(two.mul(c14)).add(two.mul(c23).add(two.mul(c24))),
+        two.mul(p12.mul(p34)),
+        sq13.add(sq31).add(sq14.add(sq41)).add(sq23.add(sq32).add(sq24.add(sq42))),
+    );
+
+    // ══════════════════════════════════════════════════════════════
+    // Step 5: RHS ≡ αδ + γβ, show:
+    // (sq13+sq31+sq14+sq41) + (sq23+sq32+sq24+sq42)
+    //   ≡ (a1²+a2²)(b3²+b4²) + (a3²+a4²)(b1²+b2²)
+    //
+    // Using square_mul: (xy)² ≡ x²y², then factor via distrib.
+    // ══════════════════════════════════════════════════════════════
+
+    // Convert each (xy)² to x²y²
+    lemma_square_mul::<R>(a1, b3);  // sq13 ≡ a1²·b3²
+    lemma_square_mul::<R>(a3, b1);  // sq31 ≡ a3²·b1²
+    lemma_square_mul::<R>(a1, b4);  // sq14 ≡ a1²·b4²
+    lemma_square_mul::<R>(a4, b1);  // sq41 ≡ a4²·b1²
+    lemma_square_mul::<R>(a2, b3);  // sq23 ≡ a2²·b3²
+    lemma_square_mul::<R>(a3, b2);  // sq32 ≡ a3²·b2²
+    lemma_square_mul::<R>(a2, b4);  // sq24 ≡ a2²·b4²
+    lemma_square_mul::<R>(a4, b2);  // sq42 ≡ a4²·b2²
+
+    let a1s = a1.mul(a1);
+    let a2s = a2.mul(a2);
+    let a3s = a3.mul(a3);
+    let a4s = a4.mul(a4);
+    let b1s = b1.mul(b1);
+    let b2s = b2.mul(b2);
+    let b3s = b3.mul(b3);
+    let b4s = b4.mul(b4);
+
+    // Group first 4: sq13+sq31+sq14+sq41 ≡ a1²b3²+a3²b1²+a1²b4²+a4²b1²
+    lemma_add_congruence::<R>(sq13, a1s.mul(b3s), sq31, a3s.mul(b1s));
+    lemma_add_congruence::<R>(sq14, a1s.mul(b4s), sq41, a4s.mul(b1s));
+    lemma_add_congruence::<R>(
+        sq13.add(sq31), a1s.mul(b3s).add(a3s.mul(b1s)),
+        sq14.add(sq41), a1s.mul(b4s).add(a4s.mul(b1s)),
+    );
+
+    // Group second 4: sq23+sq32+sq24+sq42 ≡ a2²b3²+a3²b2²+a2²b4²+a4²b2²
+    lemma_add_congruence::<R>(sq23, a2s.mul(b3s), sq32, a3s.mul(b2s));
+    lemma_add_congruence::<R>(sq24, a2s.mul(b4s), sq42, a4s.mul(b2s));
+    lemma_add_congruence::<R>(
+        sq23.add(sq32), a2s.mul(b3s).add(a3s.mul(b2s)),
+        sq24.add(sq42), a2s.mul(b4s).add(a4s.mul(b2s)),
+    );
+
+    // Full RHS congruence
+    lemma_add_congruence::<R>(
+        sq13.add(sq31).add(sq14.add(sq41)),
+        a1s.mul(b3s).add(a3s.mul(b1s)).add(a1s.mul(b4s).add(a4s.mul(b1s))),
+        sq23.add(sq32).add(sq24.add(sq42)),
+        a2s.mul(b3s).add(a3s.mul(b2s)).add(a2s.mul(b4s).add(a4s.mul(b2s))),
+    );
+
+    // Now rearrange a1²b3²+a3²b1²+a1²b4²+a4²b1² to a1²(b3²+b4²)+a4²b1²+a3²b1²
+    // Actually, let's factor directly:
+    // a1²b3²+a1²b4² = a1²(b3²+b4²)    [left distrib reversed]
+    // a3²b1²+a4²b1² = (a3²+a4²)b1²... wait, = b1²(a3²+a4²)... hmm,
+    // a3²b1² + a4²b1² — this is adding two terms. Use right distrib:
+    // (a3²+a4²)*b1² = a3²*b1² + a4²*b1²  [right distrib reversed]
+
+    // First group: rearrange (a1²b3²+a3²b1²)+(a1²b4²+a4²b1²) to (a1²b3²+a1²b4²)+(a3²b1²+a4²b1²)
+    lemma_add_rearrange_2x2::<R>(a1s.mul(b3s), a3s.mul(b1s), a1s.mul(b4s), a4s.mul(b1s));
+    // ≡ (a1²b3²+a1²b4²)+(a3²b1²+a4²b1²)
+
+    // a1²b3²+a1²b4² ≡ a1²(b3²+b4²) [left distrib reversed]
+    R::axiom_mul_distributes_left(a1s, b3s, b4s);
+    R::axiom_eqv_symmetric(a1s.mul(b3s).add(a1s.mul(b4s)), a1s.mul(b3s.add(b4s)));
+
+    // a3²b1²+a4²b1² ≡ (a3²+a4²)b1² [right distrib reversed]
+    lemma_mul_distributes_right::<R>(a3s, a4s, b1s);
+    R::axiom_eqv_symmetric(a3s.mul(b1s).add(a4s.mul(b1s)), a3s.add(a4s).mul(b1s));
+
+    lemma_add_congruence::<R>(
+        a1s.mul(b3s).add(a1s.mul(b4s)), a1s.mul(b3s.add(b4s)),
+        a3s.mul(b1s).add(a4s.mul(b1s)), a3s.add(a4s).mul(b1s),
+    );
+    R::axiom_eqv_transitive(
+        a1s.mul(b3s).add(a3s.mul(b1s)).add(a1s.mul(b4s).add(a4s.mul(b1s))),
+        a1s.mul(b3s).add(a1s.mul(b4s)).add(a3s.mul(b1s).add(a4s.mul(b1s))),
+        a1s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b1s)),
+    );
+
+    // Second group: rearrange (a2²b3²+a3²b2²)+(a2²b4²+a4²b2²) similarly
+    lemma_add_rearrange_2x2::<R>(a2s.mul(b3s), a3s.mul(b2s), a2s.mul(b4s), a4s.mul(b2s));
+
+    R::axiom_mul_distributes_left(a2s, b3s, b4s);
+    R::axiom_eqv_symmetric(a2s.mul(b3s).add(a2s.mul(b4s)), a2s.mul(b3s.add(b4s)));
+
+    lemma_mul_distributes_right::<R>(a3s, a4s, b2s);
+    R::axiom_eqv_symmetric(a3s.mul(b2s).add(a4s.mul(b2s)), a3s.add(a4s).mul(b2s));
+
+    lemma_add_congruence::<R>(
+        a2s.mul(b3s).add(a2s.mul(b4s)), a2s.mul(b3s.add(b4s)),
+        a3s.mul(b2s).add(a4s.mul(b2s)), a3s.add(a4s).mul(b2s),
+    );
+    R::axiom_eqv_transitive(
+        a2s.mul(b3s).add(a3s.mul(b2s)).add(a2s.mul(b4s).add(a4s.mul(b2s))),
+        a2s.mul(b3s).add(a2s.mul(b4s)).add(a3s.mul(b2s).add(a4s.mul(b2s))),
+        a2s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b2s)),
+    );
+
+    // Combine: (a1²δ + γ·b1²) + (a2²δ + γ·b2²) ≡ (a1²+a2²)δ + γ(b1²+b2²)
+    // First: a1²δ + a2²δ ≡ (a1²+a2²)δ
+    lemma_mul_distributes_right::<R>(a1s, a2s, b3s.add(b4s));
+    R::axiom_eqv_symmetric(
+        a1s.mul(b3s.add(b4s)).add(a2s.mul(b3s.add(b4s))),
+        a1s.add(a2s).mul(b3s.add(b4s)),
+    );
+
+    // γ·b1² + γ·b2² ≡ γ·(b1²+b2²)
+    R::axiom_mul_distributes_left(a3s.add(a4s), b1s, b2s);
+    R::axiom_eqv_symmetric(
+        a3s.add(a4s).mul(b1s).add(a3s.add(a4s).mul(b2s)),
+        a3s.add(a4s).mul(b1s.add(b2s)),
+    );
+
+    // (a1²δ+γb1²)+(a2²δ+γb2²) ≡ (a1²δ+a2²δ)+(γb1²+γb2²)
+    lemma_add_rearrange_2x2::<R>(
+        a1s.mul(b3s.add(b4s)), a3s.add(a4s).mul(b1s),
+        a2s.mul(b3s.add(b4s)), a3s.add(a4s).mul(b2s),
+    );
+
+    // Chain to (a1²+a2²)δ + γ(b1²+b2²) = αδ + γβ
+    lemma_add_congruence::<R>(
+        a1s.mul(b3s.add(b4s)).add(a2s.mul(b3s.add(b4s))),
+        a1s.add(a2s).mul(b3s.add(b4s)),
+        a3s.add(a4s).mul(b1s).add(a3s.add(a4s).mul(b2s)),
+        a3s.add(a4s).mul(b1s.add(b2s)),
+    );
+    R::axiom_eqv_transitive(
+        a1s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b1s))
+            .add(a2s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b2s))),
+        a1s.mul(b3s.add(b4s)).add(a2s.mul(b3s.add(b4s)))
+            .add(a3s.add(a4s).mul(b1s).add(a3s.add(a4s).mul(b2s))),
+        a1s.add(a2s).mul(b3s.add(b4s))
+            .add(a3s.add(a4s).mul(b1s.add(b2s))),
+    );
+
+    // Chain full RHS: sq-sums ≡ x²y²-sums (via add_congruence on the 8 sq terms)
+    lemma_add_congruence::<R>(
+        sq13.add(sq31).add(sq14.add(sq41)),
+        a1s.mul(b3s).add(a3s.mul(b1s)).add(a1s.mul(b4s).add(a4s.mul(b1s))),
+        sq23.add(sq32).add(sq24.add(sq42)),
+        a2s.mul(b3s).add(a3s.mul(b2s)).add(a2s.mul(b4s).add(a4s.mul(b2s))),
+    );
+
+    // Lift per-group equivalences to sum: x²y²-sums ≡ factored-sums
+    lemma_add_congruence::<R>(
+        a1s.mul(b3s).add(a3s.mul(b1s)).add(a1s.mul(b4s).add(a4s.mul(b1s))),
+        a1s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b1s)),
+        a2s.mul(b3s).add(a3s.mul(b2s)).add(a2s.mul(b4s).add(a4s.mul(b2s))),
+        a2s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b2s)),
+    );
+
+    // Chain: sq-sums ≡ x²y²-sums ≡ factored-sums
+    R::axiom_eqv_transitive(
+        sq13.add(sq31).add(sq14.add(sq41))
+            .add(sq23.add(sq32).add(sq24.add(sq42))),
+        a1s.mul(b3s).add(a3s.mul(b1s)).add(a1s.mul(b4s).add(a4s.mul(b1s)))
+            .add(a2s.mul(b3s).add(a3s.mul(b2s)).add(a2s.mul(b4s).add(a4s.mul(b2s)))),
+        a1s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b1s))
+            .add(a2s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b2s))),
+    );
+
+    // Chain: factored-sums ≡ αδ + γβ
+    R::axiom_eqv_transitive(
+        sq13.add(sq31).add(sq14.add(sq41))
+            .add(sq23.add(sq32).add(sq24.add(sq42))),
+        a1s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b1s))
+            .add(a2s.mul(b3s.add(b4s)).add(a3s.add(a4s).mul(b2s))),
+        alpha.mul(delta).add(gamma.mul(beta)),
+    );
+
+    // Apply RHS congruence to inequality
+    lemma_le_congruence_right::<R>(
+        two.mul(p12.mul(p34)),
+        sq13.add(sq31).add(sq14.add(sq41))
+            .add(sq23.add(sq32).add(sq24.add(sq42))),
+        alpha.mul(delta).add(gamma.mul(beta)),
+    );
+}
+
+/// Cauchy-Schwarz in 4D: (a1*b1+a2*b2+a3*b3+a4*b4)² ≤ (a1²+a2²+a3²+a4²)*(b1²+b2²+b3²+b4²).
+///
+/// Proof: split the dot product as p12+p34 where p12=a1b1+a2b2, p34=a3b3+a4b4.
+/// Apply 2D CS to bound p12² and p34², and lemma_cross_term_bound_4d for 2*p12*p34.
+/// Sum and factor to get the result.
+pub proof fn lemma_cauchy_schwarz_4d<R: OrderedRing>(
+    a1: R, a2: R, a3: R, a4: R,
+    b1: R, b2: R, b3: R, b4: R,
+)
+    ensures
+        a1.mul(b1).add(a2.mul(b2)).add(a3.mul(b3)).add(a4.mul(b4))
+            .mul(a1.mul(b1).add(a2.mul(b2)).add(a3.mul(b3)).add(a4.mul(b4)))
+            .le(
+                a1.mul(a1).add(a2.mul(a2)).add(a3.mul(a3)).add(a4.mul(a4))
+                    .mul(b1.mul(b1).add(b2.mul(b2)).add(b3.mul(b3)).add(b4.mul(b4)))
+            ),
+{
+    let two = R::one().add(R::one());
+    let p12 = a1.mul(b1).add(a2.mul(b2));
+    let p34 = a3.mul(b3).add(a4.mul(b4));
+
+    // Left-associated form of the dot product
+    let s_left = p12.add(a3.mul(b3)).add(a4.mul(b4));
+    // Right-grouped form
+    let s_right = p12.add(p34);
+
+    let alpha = a1.mul(a1).add(a2.mul(a2));  // a1²+a2²
+    let beta  = b1.mul(b1).add(b2.mul(b2));  // b1²+b2²
+    let gamma = a3.mul(a3).add(a4.mul(a4));  // a3²+a4²
+    let delta = b3.mul(b3).add(b4.mul(b4));  // b3²+b4²
+
+    // ══════════════════════════════════════════════════════════════
+    // Part A: s_left ≡ s_right (via associativity)
+    // ((a1b1+a2b2)+a3b3)+a4b4 ≡ (a1b1+a2b2)+(a3b3+a4b4)
+    // ══════════════════════════════════════════════════════════════
+
+    R::axiom_add_associative(p12, a3.mul(b3), a4.mul(b4));
+
+    // s_left² ≡ s_right² (by congruence)
+    lemma_mul_congruence::<R>(s_left, s_right, s_left, s_right);
+
+    // ══════════════════════════════════════════════════════════════
+    // Part B: s_right² ≡ p12² + 2·p12·p34 + p34²
+    // ══════════════════════════════════════════════════════════════
+
+    lemma_square_expand::<R>(p12, p34);
+    // s_right² ≡ p12² + two·(p12·p34) + p34²
+
+    // ══════════════════════════════════════════════════════════════
+    // Part C: Bound each term
+    // ══════════════════════════════════════════════════════════════
+
+    // C1: p12² ≤ α·β (by 2D CS)
+    lemma_cauchy_schwarz_2d::<R>(a1, a2, b1, b2);
+
+    // C2: p34² ≤ γ·δ (by 2D CS)
+    lemma_cauchy_schwarz_2d::<R>(a3, a4, b3, b4);
+
+    // C3: 2·p12·p34 ≤ α·δ + γ·β (by cross-term bound)
+    lemma_cross_term_bound_4d::<R>(a1, a2, a3, a4, b1, b2, b3, b4);
+
+    // ══════════════════════════════════════════════════════════════
+    // Part D: Sum the bounds
+    // p12² + (2·p12·p34) ≤ αβ + (αδ+γβ)
+    // ══════════════════════════════════════════════════════════════
+
+    lemma_le_add_both::<R>(
+        p12.mul(p12), alpha.mul(beta),
+        two.mul(p12.mul(p34)), alpha.mul(delta).add(gamma.mul(beta)),
+    );
+    // + p34² ≤ + γδ
+    lemma_le_add_both::<R>(
+        p12.mul(p12).add(two.mul(p12.mul(p34))),
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))),
+        p34.mul(p34),
+        gamma.mul(delta),
+    );
+
+    // ══════════════════════════════════════════════════════════════
+    // Part E: LHS ≡ s_left², connect via congruence
+    // s_left² ≡ s_right² ≡ p12²+2·p12·p34+p34²
+    // ══════════════════════════════════════════════════════════════
+
+    // s_right² ≡ p12²+two·(p12·p34)+p34² (from square_expand above)
+    // s_left² ≡ s_right² (from Part A)
+    R::axiom_eqv_transitive(
+        s_left.mul(s_left),
+        s_right.mul(s_right),
+        p12.mul(p12).add(two.mul(p12.mul(p34))).add(p34.mul(p34)),
+    );
+
+    // Apply congruence to LHS of inequality
+    R::axiom_eqv_symmetric(
+        s_left.mul(s_left),
+        p12.mul(p12).add(two.mul(p12.mul(p34))).add(p34.mul(p34)),
+    );
+    lemma_le_congruence_left::<R>(
+        p12.mul(p12).add(two.mul(p12.mul(p34))).add(p34.mul(p34)),
+        s_left.mul(s_left),
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))).add(gamma.mul(delta)),
+    );
+
+    // ══════════════════════════════════════════════════════════════
+    // Part F: RHS ≡ (Σaᵢ²)·(Σbⱼ²), i.e.,
+    // αβ + (αδ+γβ) + γδ ≡ (α+γ)(β+δ)
+    // and (α+γ) ≡ Σaᵢ² (left-associated), (β+δ) ≡ Σbⱼ² (left-associated)
+    // ══════════════════════════════════════════════════════════════
+
+    // F1: (α+γ)(β+δ) ≡ αβ+αδ+γβ+γδ
+    // Expand via right distrib then left distrib:
+    // (α+γ)(β+δ) ≡ α(β+δ) + γ(β+δ)
+    lemma_mul_distributes_right::<R>(alpha, gamma, beta.add(delta));
+    // α(β+δ) ≡ αβ + αδ
+    R::axiom_mul_distributes_left(alpha, beta, delta);
+    // γ(β+δ) ≡ γβ + γδ
+    R::axiom_mul_distributes_left(gamma, beta, delta);
+
+    // (α+γ)(β+δ) ≡ (αβ+αδ) + (γβ+γδ)
+    lemma_add_congruence::<R>(
+        alpha.mul(beta.add(delta)), alpha.mul(beta).add(alpha.mul(delta)),
+        gamma.mul(beta.add(delta)), gamma.mul(beta).add(gamma.mul(delta)),
+    );
+    R::axiom_eqv_transitive(
+        alpha.add(gamma).mul(beta.add(delta)),
+        alpha.mul(beta.add(delta)).add(gamma.mul(beta.add(delta))),
+        alpha.mul(beta).add(alpha.mul(delta)).add(gamma.mul(beta).add(gamma.mul(delta))),
+    );
+
+    // Now show our bound sum ≡ (α+γ)(β+δ):
+    // αβ + (αδ+γβ) + γδ ≡ (αβ+αδ) + (γβ+γδ)
+    // LHS is left-assoc: (αβ + (αδ+γβ)) + γδ
+    // via rearrange: αβ+(αδ+γβ) ≡ (αβ+αδ)+γβ [assoc reversed in inner]
+    R::axiom_add_associative(alpha.mul(beta), alpha.mul(delta), gamma.mul(beta));
+    R::axiom_eqv_symmetric(
+        alpha.mul(beta).add(alpha.mul(delta)).add(gamma.mul(beta)),
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))),
+    );
+    // So αβ+(αδ+γβ) ≡ (αβ+αδ)+γβ
+    // Then ((αβ+αδ)+γβ)+γδ ≡ (αβ+αδ)+(γβ+γδ) [assoc]
+    R::axiom_add_associative(
+        alpha.mul(beta).add(alpha.mul(delta)),
+        gamma.mul(beta),
+        gamma.mul(delta),
+    );
+    // Chain: (αβ+(αδ+γβ))+γδ ≡ ((αβ+αδ)+γβ)+γδ ≡ (αβ+αδ)+(γβ+γδ)
+    R::axiom_add_congruence_left(
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))),
+        alpha.mul(beta).add(alpha.mul(delta)).add(gamma.mul(beta)),
+        gamma.mul(delta),
+    );
+    R::axiom_eqv_transitive(
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))).add(gamma.mul(delta)),
+        alpha.mul(beta).add(alpha.mul(delta)).add(gamma.mul(beta)).add(gamma.mul(delta)),
+        alpha.mul(beta).add(alpha.mul(delta)).add(gamma.mul(beta).add(gamma.mul(delta))),
+    );
+    // bound_sum ≡ (αβ+αδ)+(γβ+γδ) ≡ (α+γ)(β+δ)
+    R::axiom_eqv_symmetric(
+        alpha.add(gamma).mul(beta.add(delta)),
+        alpha.mul(beta).add(alpha.mul(delta)).add(gamma.mul(beta).add(gamma.mul(delta))),
+    );
+    R::axiom_eqv_transitive(
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))).add(gamma.mul(delta)),
+        alpha.mul(beta).add(alpha.mul(delta)).add(gamma.mul(beta).add(gamma.mul(delta))),
+        alpha.add(gamma).mul(beta.add(delta)),
+    );
+
+    // F2: α+γ ≡ Σaᵢ² (left-associated)
+    // alpha.add(gamma) = (a1²+a2²)+(a3²+a4²)
+    // left-associated: ((a1²+a2²)+a3²)+a4²
+    R::axiom_add_associative(alpha, a3.mul(a3), a4.mul(a4));
+    // (α+γ) ≡ (α+a3²)+a4² [assoc reversed... no]
+    // α + (a3²+a4²) ≡ (α+a3²)+a4²... wait, assoc gives (α+a3²)+a4² ≡ α+(a3²+a4²)
+    // So α+(a3²+a4²) ≡ reversed is (α+a3²)+a4²
+    R::axiom_eqv_symmetric(
+        alpha.add(a3.mul(a3)).add(a4.mul(a4)),
+        alpha.add(a3.mul(a3).add(a4.mul(a4))),
+    );
+
+    // F3: β+δ ≡ Σbⱼ² (left-associated)
+    R::axiom_add_associative(beta, b3.mul(b3), b4.mul(b4));
+    R::axiom_eqv_symmetric(
+        beta.add(b3.mul(b3)).add(b4.mul(b4)),
+        beta.add(b3.mul(b3).add(b4.mul(b4))),
+    );
+
+    // F4: (α+γ)(β+δ) ≡ (Σaᵢ²)(Σbⱼ²)
+    lemma_mul_congruence::<R>(
+        alpha.add(gamma),
+        alpha.add(a3.mul(a3)).add(a4.mul(a4)),
+        beta.add(delta),
+        beta.add(b3.mul(b3)).add(b4.mul(b4)),
+    );
+
+    // Chain bound_sum to (Σaᵢ²)(Σbⱼ²)
+    R::axiom_eqv_transitive(
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))).add(gamma.mul(delta)),
+        alpha.add(gamma).mul(beta.add(delta)),
+        alpha.add(a3.mul(a3)).add(a4.mul(a4))
+            .mul(beta.add(b3.mul(b3)).add(b4.mul(b4))),
+    );
+
+    // Apply RHS congruence to complete the proof
+    lemma_le_congruence_right::<R>(
+        s_left.mul(s_left),
+        alpha.mul(beta).add(alpha.mul(delta).add(gamma.mul(beta))).add(gamma.mul(delta)),
+        alpha.add(a3.mul(a3)).add(a4.mul(a4))
+            .mul(beta.add(b3.mul(b3)).add(b4.mul(b4))),
+    );
+}
+
 } // verus!

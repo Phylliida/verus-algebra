@@ -18,3 +18,15 @@ pub mod power;
 
 #[cfg(verus_keep_ghost)]
 pub mod convex;
+
+#[cfg(verus_keep_ghost)]
+pub mod determinant;
+
+#[cfg(verus_keep_ghost)]
+pub mod polynomial;
+
+#[cfg(verus_keep_ghost)]
+pub mod sqrt;
+
+#[cfg(verus_keep_ghost)]
+pub mod archimedean;
