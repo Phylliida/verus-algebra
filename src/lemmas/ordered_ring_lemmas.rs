@@ -676,4 +676,25 @@ pub proof fn lemma_le_mul_nonpos_flip<R: OrderedRing>(a: R, b: R, c: R)
     R::axiom_le_congruence(b.mul(c).neg().neg(), b.mul(c), a.mul(c).neg().neg(), a.mul(c));
 }
 
+/// Transfer a < b to c < d when a ≡ c and b ≡ d.
+pub proof fn lemma_lt_congruence_both<R: OrderedRing>(a: R, c: R, b: R, d: R)
+    requires
+        a.lt(b),
+        a.eqv(c),
+        b.eqv(d),
+    ensures
+        c.lt(d),
+{
+    R::axiom_lt_iff_le_and_not_eqv(a, b);
+    R::axiom_lt_iff_le_and_not_eqv(c, d);
+    R::axiom_le_congruence(a, c, b, d);
+    if c.eqv(d) {
+        // c ≡ a (symmetric), d ≡ b (symmetric), c ≡ d → a ≡ b
+        R::axiom_eqv_symmetric(a, c);
+        R::axiom_eqv_transitive(a, c, d);
+        R::axiom_eqv_symmetric(b, d);
+        R::axiom_eqv_transitive(a, d, b);
+    }
+}
+
 } // verus!
