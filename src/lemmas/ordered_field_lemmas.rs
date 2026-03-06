@@ -507,6 +507,109 @@ pub proof fn lemma_cross_mul_le<F: OrderedField>(a: F, b: F, c: F, d: F)
     }
 }
 
+/// b < 0 implies recip(b) < 0.
+pub proof fn lemma_recip_neg<F: OrderedField>(b: F)
+    requires
+        b.lt(F::zero()),
+    ensures
+        b.recip().lt(F::zero()),
+{
+    F::axiom_lt_iff_le_and_not_eqv(b, F::zero());
+    F::axiom_eqv_symmetric(b, F::zero());
+    // !b.eqv(F::zero())
+
+    lemma_trichotomy::<F>(F::zero(), b.recip());
+
+    // Case 1: 0 < recip(b). Then b*recip(b) < 0 (pos*neg), but b*recip(b) ≡ 1 > 0. Contradiction.
+    if F::zero().lt(b.recip()) {
+        lemma_mul_pos_neg::<F>(b.recip(), b);
+        // recip(b)*b < 0
+        F::axiom_mul_commutative(b.recip(), b);
+        // b*recip(b) ≡ recip(b)*b, so b*recip(b) < 0 via congruence
+        F::axiom_lt_iff_le_and_not_eqv(b.recip().mul(b), F::zero());
+        lemma_le_congruence_left::<F>(b.recip().mul(b), b.mul(b.recip()), F::zero());
+        F::axiom_lt_iff_le_and_not_eqv(b.mul(b.recip()), F::zero());
+        F::axiom_eqv_symmetric(b.mul(b.recip()), F::zero());
+        if b.mul(b.recip()).eqv(F::zero()) {
+            F::axiom_eqv_symmetric(b.recip().mul(b), b.mul(b.recip()));
+            F::axiom_eqv_transitive(b.recip().mul(b), b.mul(b.recip()), F::zero());
+            F::axiom_eqv_symmetric(b.recip().mul(b), F::zero());
+        }
+        // b*recip(b) ≡ 1
+        F::axiom_mul_recip_right(b);
+        // 1 ≤ 0
+        F::axiom_eqv_symmetric(b.mul(b.recip()), F::one());
+        lemma_le_congruence_left::<F>(b.mul(b.recip()), F::one(), F::zero());
+        // But 0 < 1
+        lemma_zero_lt_one::<F>();
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), F::one());
+        F::axiom_le_antisymmetric(F::zero(), F::one());
+        F::axiom_one_ne_zero();
+    }
+
+    // Case 2: 0 ≡ recip(b). Then b*recip(b) ≡ b*0 ≡ 0, but b*recip(b) ≡ 1. So 0 ≡ 1.
+    if F::zero().eqv(b.recip()) {
+        F::axiom_eqv_symmetric(F::zero(), b.recip());
+        lemma_mul_congruence_right::<F>(b, b.recip(), F::zero());
+        F::axiom_mul_zero_right(b);
+        F::axiom_eqv_transitive(b.mul(b.recip()), b.mul(F::zero()), F::zero());
+        F::axiom_mul_recip_right(b);
+        F::axiom_eqv_symmetric(b.mul(b.recip()), F::one());
+        F::axiom_eqv_transitive(F::one(), b.mul(b.recip()), F::zero());
+        F::axiom_one_ne_zero();
+    }
+}
+
+/// 0 ≤ a and 0 < b implies 0 ≤ a/b.
+pub proof fn lemma_nonneg_div_pos<F: OrderedField>(a: F, b: F)
+    requires
+        F::zero().le(a),
+        F::zero().lt(b),
+    ensures
+        F::zero().le(a.div(b)),
+{
+    lemma_le_div_monotone::<F>(F::zero(), a, b);
+    // 0/b ≤ a/b. Show 0/b ≡ 0.
+    F::axiom_div_is_mul_recip(F::zero(), b);
+    lemma_mul_zero_left::<F>(b.recip());
+    F::axiom_eqv_transitive(F::zero().div(b), F::zero().mul(b.recip()), F::zero());
+    // 0 ≤ a/b via le_congruence
+    F::axiom_eqv_reflexive(a.div(b));
+    F::axiom_le_congruence(F::zero().div(b), F::zero(), a.div(b), a.div(b));
+}
+
+/// a ≤ 0 and b < 0 implies 0 ≤ a/b.
+pub proof fn lemma_nonpos_div_neg<F: OrderedField>(a: F, b: F)
+    requires
+        a.le(F::zero()),
+        b.lt(F::zero()),
+    ensures
+        F::zero().le(a.div(b)),
+{
+    // recip(b) < 0, hence recip(b) ≤ 0
+    lemma_recip_neg::<F>(b);
+    F::axiom_lt_iff_le_and_not_eqv(b.recip(), F::zero());
+    // a ≤ 0 and recip(b) ≤ 0: use le_mul_nonpos_flip with (a, 0, recip(b))
+    // Says: recip(b) ≤ 0 and a ≤ 0 → 0*recip(b) ≤ a*recip(b)
+    lemma_le_mul_nonpos_flip::<F>(a, F::zero(), b.recip());
+    // 0*recip(b) ≡ 0
+    lemma_mul_zero_left::<F>(b.recip());
+    // 0 ≤ a*recip(b) via congruence from 0*recip(b) ≤ a*recip(b)
+    F::axiom_eqv_reflexive(a.mul(b.recip()));
+    F::axiom_le_congruence(
+        F::zero().mul(b.recip()), F::zero(),
+        a.mul(b.recip()), a.mul(b.recip()),
+    );
+    // a/b ≡ a*recip(b), transfer via congruence
+    F::axiom_div_is_mul_recip(a, b);
+    F::axiom_eqv_symmetric(a.div(b), a.mul(b.recip()));
+    F::axiom_eqv_reflexive(F::zero());
+    F::axiom_le_congruence(
+        F::zero(), F::zero(),
+        a.mul(b.recip()), a.div(b),
+    );
+}
+
 /// c < 0 and a < b implies b*c < a*c (strict multiplication by negative flips order).
 pub proof fn lemma_lt_mul_nonpos_flip<F: OrderedField>(a: F, b: F, c: F)
     requires

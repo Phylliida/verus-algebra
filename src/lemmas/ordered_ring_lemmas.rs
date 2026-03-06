@@ -697,4 +697,24 @@ pub proof fn lemma_lt_congruence_both<R: OrderedRing>(a: R, c: R, b: R, d: R)
     }
 }
 
+/// If !(a < b), then b ≤ a.
+/// Useful for converting negated strict ordering into weak ordering.
+pub proof fn lemma_not_lt_implies_le<R: OrderedRing>(a: R, b: R)
+    requires
+        !a.lt(b),
+    ensures
+        b.le(a),
+{
+    R::axiom_le_total(a, b);
+    R::axiom_lt_iff_le_and_not_eqv(a, b);
+    if a.le(b) {
+        // !a.lt(b) and a.le(b) → a.eqv(b) (from lt_iff)
+        // a.eqv(b) → b.le(a) via le_congruence
+        R::axiom_eqv_symmetric(a, b);
+        R::axiom_eqv_reflexive(a);
+        R::axiom_le_total(a, a); // a.le(a)
+        R::axiom_le_congruence(a, b, a, a);
+    }
+}
+
 } // verus!
