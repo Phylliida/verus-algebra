@@ -717,4 +717,23 @@ pub proof fn lemma_not_lt_implies_le<R: OrderedRing>(a: R, b: R)
     }
 }
 
+/// If a ≤ b, then !(b < a).
+/// The contrapositive of `lemma_not_lt_implies_le`.
+pub proof fn lemma_le_implies_not_lt<R: OrderedRing>(a: R, b: R)
+    requires
+        a.le(b),
+    ensures
+        !b.lt(a),
+{
+    R::axiom_lt_iff_le_and_not_eqv(b, a);
+    if b.lt(a) {
+        // b.le(a) and !b.eqv(a)
+        // Also a.le(b), so a.le(b) and b.le(a) → a.eqv(b)
+        R::axiom_le_antisymmetric(a, b);
+        // a.eqv(b), so b.eqv(a)
+        R::axiom_eqv_symmetric(a, b);
+        // Contradiction: b.eqv(a) and !b.eqv(a)
+    }
+}
+
 } // verus!
