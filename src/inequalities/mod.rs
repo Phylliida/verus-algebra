@@ -2195,4 +2195,150 @@ pub proof fn lemma_cauchy_schwarz_4d<R: OrderedRing>(
     );
 }
 
+/// If 0 ≤ a, 0 ≤ b, and a² ≤ b², then a ≤ b.
+///
+/// Proof: (b-a)(b+a) ≡ b²-a² ≥ 0. If a+b ≡ 0 then a ≡ b ≡ 0.
+/// Otherwise 0 < a+b, and field cancellation gives b-a ≡ 0 → a ≡ b,
+/// contradicting b < a.
+pub proof fn lemma_square_le_implies_le<F: OrderedField>(a: F, b: F)
+    requires
+        F::zero().le(a),
+        F::zero().le(b),
+        a.mul(a).le(b.mul(b)),
+    ensures
+        a.le(b),
+{
+    let a2 = a.mul(a);
+    let b2 = b.mul(b);
+    let sum = a.add(b);
+    let diff_ba = b.sub(a);
+
+    // 0 ≤ a+b
+    lemma_nonneg_add::<F>(a, b);
+
+    if sum.eqv(F::zero()) {
+        // a+b ≡ 0 with 0 ≤ a and 0 ≤ b → a ≡ 0, b ≡ 0
+
+        // Show a ≤ 0: from 0 ≤ b, add a: 0+a ≤ b+a
+        F::axiom_le_add_monotone(F::zero(), b, a);
+        // 0+a ≡ a
+        lemma_add_zero_left::<F>(a);
+        // b+a ≡ a+b ≡ 0
+        F::axiom_add_commutative(b, a);
+        F::axiom_eqv_transitive(b.add(a), a.add(b), F::zero());
+        // le_congruence: 0+a ≡ a, b+a ≡ 0, 0+a ≤ b+a → a ≤ 0
+        F::axiom_le_congruence(
+            F::zero().add(a), a,
+            b.add(a), F::zero(),
+        );
+        // a ≤ 0 and 0 ≤ a → a.eqv(F::zero())
+        F::axiom_le_antisymmetric(a, F::zero());
+
+        // Similarly: from 0 ≤ a, add b: 0+b ≤ a+b ≡ 0
+        F::axiom_le_add_monotone(F::zero(), a, b);
+        lemma_add_zero_left::<F>(b);
+        F::axiom_le_congruence(
+            F::zero().add(b), b,
+            a.add(b), F::zero(),
+        );
+        F::axiom_le_antisymmetric(b, F::zero());
+        // b.eqv(F::zero())
+
+        // a ≡ 0 ≡ b → a ≡ b → a ≤ b
+        F::axiom_eqv_symmetric(b, F::zero());
+        F::axiom_eqv_transitive(a, F::zero(), b);
+        // a ≡ b → a ≤ b
+        F::axiom_eqv_reflexive(a);
+        F::axiom_le_reflexive(a);
+        F::axiom_le_congruence(a, a, a, b);
+    } else {
+        // a+b ≢ 0 and 0 ≤ a+b → 0 < a+b
+        F::axiom_lt_iff_le_and_not_eqv(F::zero(), sum);
+
+        F::axiom_le_total(a, b);
+        if a.le(b) {
+            // done
+        } else {
+            // b ≤ a (totality). Derive contradiction.
+            // b ≤ a → 0 ≤ a-b
+            lemma_le_iff_sub_nonneg::<F>(b, a);
+
+            // From a² ≤ b²: a² + (-b²) ≤ b² + (-b²) ≡ 0, so a²-b² ≤ 0
+            F::axiom_le_add_monotone(a2, b2, b2.neg());
+            F::axiom_add_inverse_right(b2);
+            F::axiom_sub_is_add_neg(a2, b2);
+            F::axiom_eqv_symmetric(a2.sub(b2), a2.add(b2.neg()));
+            F::axiom_le_congruence(
+                a2.add(b2.neg()), a2.sub(b2),
+                b2.add(b2.neg()), F::zero(),
+            );
+            // a²-b² ≤ 0
+
+            // (a-b)*(a+b) ≡ a²-b² by square_sub
+            lemma_square_sub::<F>(a, b);
+
+            // 0 ≤ a-b and 0 ≤ a+b → 0*(a+b) ≤ (a-b)*(a+b)
+            F::axiom_le_mul_nonneg_monotone(F::zero(), a.sub(b), sum);
+            // 0*(a+b) ≡ 0
+            lemma_mul_zero_left::<F>(sum);
+            F::axiom_eqv_reflexive(a.sub(b).mul(sum));
+            F::axiom_le_congruence(
+                F::zero().mul(sum), F::zero(),
+                a.sub(b).mul(sum), a.sub(b).mul(sum),
+            );
+            // 0 ≤ (a-b)*(a+b)
+
+            // 0 ≤ (a-b)*(a+b) ≡ a²-b², so 0 ≤ a²-b²
+            lemma_le_congruence_right::<F>(
+                F::zero(),
+                a.sub(b).mul(a.add(b)),
+                a2.sub(b2),
+            );
+            // 0 ≤ a²-b²
+
+            // 0 ≤ a²-b² and a²-b² ≤ 0 → a²-b² ≡ 0
+            F::axiom_le_antisymmetric(F::zero(), a2.sub(b2));
+            // 0 ≡ a²-b²
+
+            // (a-b)*(a+b) ≡ a²-b² ≡ 0
+            F::axiom_eqv_symmetric(F::zero(), a2.sub(b2));
+            F::axiom_eqv_transitive(
+                a.sub(b).mul(a.add(b)),
+                a2.sub(b2),
+                F::zero(),
+            );
+
+            // (a+b)*(a-b) ≡ 0
+            F::axiom_mul_commutative(sum, a.sub(b));
+            F::axiom_eqv_transitive(
+                sum.mul(a.sub(b)),
+                a.sub(b).mul(sum),
+                F::zero(),
+            );
+
+            // (a+b)*0 ≡ 0, so 0 ≡ (a+b)*0
+            F::axiom_mul_zero_right(sum);
+            F::axiom_eqv_symmetric(sum.mul(F::zero()), F::zero());
+
+            // (a+b)*(a-b) ≡ 0 ≡ (a+b)*0
+            F::axiom_eqv_transitive(
+                sum.mul(a.sub(b)),
+                F::zero(),
+                sum.mul(F::zero()),
+            );
+
+            // Cancel (a+b): (a-b) ≡ 0
+            lemma_mul_cancel_left::<F>(a.sub(b), F::zero(), sum);
+
+            // a-b ≡ 0 → a ≡ b
+            lemma_sub_eqv_zero_implies_eqv::<F>(a, b);
+
+            // a ≡ b → a ≤ b (contradicting ¬(a ≤ b))
+            F::axiom_eqv_reflexive(a);
+            F::axiom_le_reflexive(a);
+            F::axiom_le_congruence(a, a, a, b);
+        }
+    }
+}
+
 } // verus!
