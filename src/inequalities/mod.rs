@@ -1042,7 +1042,7 @@ pub proof fn lemma_sum_squares_zero_3d<F: OrderedField>(a: F, b: F, c: F)
 }
 
 /// Helper: (x*y)*(x*y) ≡ (x*x)*(y*y), i.e. (xy)² ≡ x²y².
-proof fn lemma_square_mul<R: Ring>(x: R, y: R)
+pub proof fn lemma_square_mul<R: Ring>(x: R, y: R)
     ensures
         x.mul(y).mul(x.mul(y)).eqv(x.mul(x).mul(y.mul(y))),
 {
