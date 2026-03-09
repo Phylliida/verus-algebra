@@ -45,3 +45,6 @@ pub mod binomial;
 
 #[cfg(verus_keep_ghost)]
 pub mod convex_combination;
+
+#[cfg(verus_keep_ghost)]
+pub mod quadratic;

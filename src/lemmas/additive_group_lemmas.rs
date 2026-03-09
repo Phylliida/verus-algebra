@@ -639,4 +639,48 @@ pub proof fn lemma_add_sub_cancel_right<A: AdditiveGroup>(b: A, a: A, c: A)
     );
 }
 
+/// Negation of subtraction: -(a - b) ≡ b - a.
+pub proof fn lemma_neg_sub<A: AdditiveGroup>(a: A, b: A)
+    ensures
+        a.sub(b).neg().eqv(b.sub(a)),
+{
+    // (a-b) + (b-a) ≡ a-a ≡ 0  by telescoping
+    lemma_sub_add_sub::<A>(a, b, a);
+    A::axiom_add_inverse_right(a);
+    A::axiom_sub_is_add_neg(a, a);
+    A::axiom_eqv_transitive(a.sub(b).add(b.sub(a)), a.sub(a), a.add(a.neg()));
+    A::axiom_eqv_transitive(a.sub(b).add(b.sub(a)), a.add(a.neg()), A::zero());
+    // (a-b) + (b-a) ≡ 0 → (b-a) ≡ -(a-b)
+    lemma_neg_unique::<A>(a.sub(b), b.sub(a));
+    // (b-a) ≡ -(a-b) → -(a-b) ≡ (b-a)
+    A::axiom_eqv_symmetric(b.sub(a), a.sub(b).neg());
+}
+
+/// Triple telescoping: (a-b) + (b-c) + (c-a) ≡ 0.
+pub proof fn lemma_sub_telescope_triple<A: AdditiveGroup>(a: A, b: A, c: A)
+    ensures
+        a.sub(b).add(b.sub(c)).add(c.sub(a)).eqv(A::zero()),
+{
+    // (a-b) + (b-c) ≡ a-c  by lemma_sub_add_sub
+    lemma_sub_add_sub::<A>(a, b, c);
+    // [(a-b)+(b-c)] + (c-a) ≡ (a-c) + (c-a)
+    A::axiom_eqv_reflexive(c.sub(a));
+    lemma_add_congruence::<A>(
+        a.sub(b).add(b.sub(c)), a.sub(c),
+        c.sub(a), c.sub(a),
+    );
+    // (a-c) + (c-a) ≡ a-a ≡ 0
+    lemma_sub_add_sub::<A>(a, c, a);
+    A::axiom_add_inverse_right(a);
+    A::axiom_sub_is_add_neg(a, a);
+    A::axiom_eqv_transitive(a.sub(c).add(c.sub(a)), a.sub(a), a.add(a.neg()));
+    A::axiom_eqv_transitive(a.sub(c).add(c.sub(a)), a.add(a.neg()), A::zero());
+    // Chain
+    A::axiom_eqv_transitive(
+        a.sub(b).add(b.sub(c)).add(c.sub(a)),
+        a.sub(c).add(c.sub(a)),
+        A::zero(),
+    );
+}
+
 } // verus!
