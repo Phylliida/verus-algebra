@@ -159,7 +159,7 @@ proof fn lemma_cancel_neg_b<T: Ring>(b: T, x: T)
 }
 
 /// (p*q)*(p*q) ≡ (p*p)*(q*q).
-proof fn lemma_square_product<T: Ring>(p: T, q: T)
+pub proof fn lemma_square_product<T: Ring>(p: T, q: T)
     ensures p.mul(q).mul(p.mul(q)).eqv(p.mul(p).mul(q.mul(q))),
 {
     let pq = p.mul(q);
