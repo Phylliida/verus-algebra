@@ -32,6 +32,16 @@ pub trait Equivalence: Sized {
         ensures
             a.eqv(c),
     ;
+
+    /// Equality implies equivalence: if a == b, then a ≡ b.
+    /// This is a fundamental property of any reasonable equivalence relation:
+    /// syntactic equality should imply semantic equivalence.
+    proof fn axiom_eq_implies_eqv(a: Self, b: Self)
+        requires
+            a == b,
+        ensures
+            a.eqv(b),
+    ;
 }
 
 } // verus!
