@@ -13,3 +13,5 @@ pub use additive_group::*;
 pub use ring::*;
 pub use ordered_ring::*;
 pub use field::*;
+
+pub mod int_ring;
