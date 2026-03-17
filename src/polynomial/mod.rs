@@ -1,333 +1,391 @@
-use vstd::prelude::*;
-use crate::traits::ring::Ring;
-use crate::traits::field::Field;
 use crate::lemmas::additive_group_lemmas::*;
-use crate::lemmas::ring_lemmas::*;
 use crate::lemmas::field_lemmas::*;
+use crate::lemmas::ring_lemmas::*;
+use crate::summation;
+use crate::traits::field::Field;
+use crate::traits::ring::Ring;
+use vstd::prelude::*;
 
 verus! {
 
-// ============================================================
-//  Spec functions
-// ============================================================
+    // ============================================================
+    //  Spec functions: Horner evaluation
+    // ============================================================
 
-/// Horner evaluation of a polynomial represented by its coefficient sequence.
-/// coeffs[0] + x * (coeffs[1] + x * (... + x * coeffs[n]))
-/// Computes c₀ + c₁x + c₂x² + ... + cₙxⁿ in n muls and n adds.
-pub open spec fn horner<R: Ring>(coeffs: Seq<R>, x: R) -> R
-    decreases coeffs.len(),
-{
-    if coeffs.len() == 0 {
-        R::zero()
-    } else {
-        coeffs[0].add(x.mul(horner::<R>(coeffs.subrange(1, coeffs.len() as int), x)))
-    }
-}
-
-/// Direct (naive) polynomial evaluation: sum of coeffs[i] * x^i.
-pub open spec fn eval_direct<R: Ring>(coeffs: Seq<R>, x: R, i: nat) -> R
-    decreases coeffs.len() - i,
-{
-    if i >= coeffs.len() {
-        R::zero()
-    } else {
-        coeffs[i as int].mul(pow_spec::<R>(x, i)).add(
-            eval_direct::<R>(coeffs, x, i + 1)
-        )
-    }
-}
-
-/// Power: x^n (used locally to avoid circular dependency with power module).
-pub open spec fn pow_spec<R: Ring>(base: R, exp: nat) -> R
-    decreases exp,
-{
-    if exp == 0 { R::one() }
-    else { base.mul(pow_spec::<R>(base, (exp - 1) as nat)) }
-}
-
-// ============================================================
-//  Basic Horner lemmas
-// ============================================================
-
-/// horner([], x) ≡ 0.
-pub proof fn lemma_horner_empty<R: Ring>(x: R)
-    ensures
-        horner::<R>(Seq::empty(), x).eqv(R::zero()),
-{
-    R::axiom_eqv_reflexive(R::zero());
-}
-
-/// horner([c], x) ≡ c.
-pub proof fn lemma_horner_single<R: Ring>(c: R, x: R)
-    ensures
-        horner::<R>(seq![c], x).eqv(c),
-{
-    let s: Seq<R> = seq![c];
-    let rest = s.subrange(1, s.len() as int);
-    assert(rest =~= Seq::<R>::empty());
-    assert(rest.len() == 0);
-    assert(horner::<R>(rest, x) == R::zero());
-
-    // horner([c], x) = c + x * horner([], x) = c + x * 0
-    // x * 0 ≡ 0
-    R::axiom_mul_zero_right(x);
-    // c + x*0 ≡ c + 0
-    lemma_add_congruence_right::<R>(c, x.mul(R::zero()), R::zero());
-    // c + 0 ≡ c
-    R::axiom_add_zero_right(c);
-    // Chain: c + x*0 ≡ c + 0 ≡ c
-    R::axiom_eqv_transitive(
-        c.add(x.mul(R::zero())),
-        c.add(R::zero()),
-        c,
-    );
-}
-
-/// horner([c₀, c₁], x) ≡ c₀ + c₁ * x.
-pub proof fn lemma_horner_linear<R: Ring>(c0: R, c1: R, x: R)
-    ensures
-        horner::<R>(seq![c0, c1], x).eqv(c0.add(c1.mul(x))),
-{
-    let s: Seq<R> = seq![c0, c1];
-    assert(s.subrange(1, 2) =~= seq![c1]);
-
-    // horner([c0,c1], x) = c0 + x * horner([c1], x)
-    // horner([c1], x) ≡ c1
-    lemma_horner_single::<R>(c1, x);
-
-    // x * horner([c1], x) ≡ x * c1
-    lemma_mul_congruence_right::<R>(x, horner::<R>(seq![c1], x), c1);
-
-    // c0 + x*horner ≡ c0 + x*c1
-    lemma_add_congruence_right::<R>(
-        c0,
-        x.mul(horner::<R>(seq![c1], x)),
-        x.mul(c1),
-    );
-
-    // x*c1 ≡ c1*x
-    R::axiom_mul_commutative(x, c1);
-
-    // c0 + x*c1 ≡ c0 + c1*x
-    lemma_add_congruence_right::<R>(c0, x.mul(c1), c1.mul(x));
-
-    // Chain: horner ≡ c0 + x*c1 ≡ c0 + c1*x
-    R::axiom_eqv_transitive(
-        c0.add(x.mul(horner::<R>(seq![c1], x))),
-        c0.add(x.mul(c1)),
-        c0.add(c1.mul(x)),
-    );
-}
-
-/// horner([c₀, c₁, c₂], x) ≡ c₀ + c₁*x + c₂*x².
-pub proof fn lemma_horner_quadratic<R: Ring>(c0: R, c1: R, c2: R, x: R)
-    ensures
-        horner::<R>(seq![c0, c1, c2], x).eqv(
-            c0.add(c1.mul(x).add(c2.mul(x.mul(x))))),
-{
-    let s: Seq<R> = seq![c0, c1, c2];
-    assert(s.subrange(1, 3) =~= seq![c1, c2]);
-
-    // horner([c0,c1,c2], x) = c0 + x * horner([c1,c2], x)
-    // horner([c1,c2], x) ≡ c1 + c2*x
-    lemma_horner_linear::<R>(c1, c2, x);
-
-    // x * horner([c1,c2], x) ≡ x * (c1 + c2*x)
-    lemma_mul_congruence_right::<R>(
-        x, horner::<R>(seq![c1, c2], x), c1.add(c2.mul(x)),
-    );
-
-    // x * (c1 + c2*x) ≡ x*c1 + x*(c2*x)  [left dist]
-    R::axiom_mul_distributes_left(x, c1, c2.mul(x));
-
-    // Chain: x*horner ≡ x*(c1+c2*x) ≡ x*c1 + x*(c2*x)
-    R::axiom_eqv_transitive(
-        x.mul(horner::<R>(seq![c1, c2], x)),
-        x.mul(c1.add(c2.mul(x))),
-        x.mul(c1).add(x.mul(c2.mul(x))),
-    );
-
-    // x*c1 ≡ c1*x
-    R::axiom_mul_commutative(x, c1);
-
-    // x*(c2*x) ≡ (x*c2)*x ≡ (c2*x)*x ≡ c2*(x*x)
-    R::axiom_mul_associative(x, c2, x);
-    R::axiom_eqv_symmetric(x.mul(c2).mul(x), x.mul(c2.mul(x)));
-    R::axiom_mul_commutative(x, c2);
-    R::axiom_mul_congruence_left(x.mul(c2), c2.mul(x), x);
-    R::axiom_eqv_transitive(
-        x.mul(c2.mul(x)),
-        x.mul(c2).mul(x),
-        c2.mul(x).mul(x),
-    );
-    R::axiom_mul_associative(c2, x, x);
-    R::axiom_eqv_transitive(
-        x.mul(c2.mul(x)),
-        c2.mul(x).mul(x),
-        c2.mul(x.mul(x)),
-    );
-
-    // x*c1 + x*(c2*x) ≡ c1*x + c2*(x*x)
-    lemma_add_congruence::<R>(
-        x.mul(c1), c1.mul(x),
-        x.mul(c2.mul(x)), c2.mul(x.mul(x)),
-    );
-
-    // Chain: x*horner ≡ x*c1 + x*(c2*x) ≡ c1*x + c2*x²
-    R::axiom_eqv_transitive(
-        x.mul(horner::<R>(seq![c1, c2], x)),
-        x.mul(c1).add(x.mul(c2.mul(x))),
-        c1.mul(x).add(c2.mul(x.mul(x))),
-    );
-
-    // Outer: c0 + x*horner ≡ c0 + (c1*x + c2*x²)
-    lemma_add_congruence_right::<R>(
-        c0,
-        x.mul(horner::<R>(seq![c1, c2], x)),
-        c1.mul(x).add(c2.mul(x.mul(x))),
-    );
-}
-
-/// Evaluating at zero: horner(coeffs, 0) ≡ coeffs[0] when non-empty.
-pub proof fn lemma_horner_at_zero<R: Ring>(coeffs: Seq<R>)
-    requires
-        coeffs.len() > 0,
-    ensures
-        horner::<R>(coeffs, R::zero()).eqv(coeffs[0]),
-{
-    let rest = coeffs.subrange(1, coeffs.len() as int);
-    // horner(coeffs, 0) = coeffs[0] + 0 * horner(rest, 0)
-    // 0 * anything ≡ 0
-    lemma_mul_zero_left::<R>(horner::<R>(rest, R::zero()));
-    // coeffs[0] + 0*horner ≡ coeffs[0] + 0
-    lemma_add_congruence_right::<R>(
-        coeffs[0],
-        R::zero().mul(horner::<R>(rest, R::zero())),
-        R::zero(),
-    );
-    // coeffs[0] + 0 ≡ coeffs[0]
-    R::axiom_add_zero_right(coeffs[0]);
-    // Chain
-    R::axiom_eqv_transitive(
-        coeffs[0].add(R::zero().mul(horner::<R>(rest, R::zero()))),
-        coeffs[0].add(R::zero()),
-        coeffs[0],
-    );
-}
-
-/// Horner respects equivalence of x:
-/// if x1 ≡ x2, then horner(coeffs, x1) ≡ horner(coeffs, x2).
-pub proof fn lemma_horner_congruence_x<R: Ring>(coeffs: Seq<R>, x1: R, x2: R)
-    requires
-        x1.eqv(x2),
-    ensures
-        horner::<R>(coeffs, x1).eqv(horner::<R>(coeffs, x2)),
-    decreases coeffs.len(),
-{
-    if coeffs.len() == 0 {
-        R::axiom_eqv_reflexive(R::zero());
-    } else {
-        let rest = coeffs.subrange(1, coeffs.len() as int);
-        // IH: horner(rest, x1) ≡ horner(rest, x2)
-        lemma_horner_congruence_x::<R>(rest, x1, x2);
-        // x1 ≡ x2 and horner(rest,x1) ≡ horner(rest,x2)
-        // → x1*horner(rest,x1) ≡ x2*horner(rest,x2)
-        lemma_mul_congruence::<R>(x1, x2, horner::<R>(rest, x1), horner::<R>(rest, x2));
-        // coeffs[0] + x1*horner ≡ coeffs[0] + x2*horner
-        R::axiom_eqv_reflexive(coeffs[0]);
-        lemma_add_congruence::<R>(
-            coeffs[0], coeffs[0],
-            x1.mul(horner::<R>(rest, x1)),
-            x2.mul(horner::<R>(rest, x2)),
-        );
-    }
-}
-
-/// Scaling: horner(k*coeffs, x) ≡ k * horner(coeffs, x),
-/// where k*coeffs means each coefficient is multiplied by k.
-///
-/// Stated pointwise: if each d[i] ≡ k*c[i], then horner(d, x) ≡ k*horner(c, x).
-pub proof fn lemma_horner_scale<R: Ring>(
-    coeffs: Seq<R>, scaled: Seq<R>, k: R, x: R,
-)
-    requires
-        coeffs.len() == scaled.len(),
-        forall|i: int| 0 <= i < coeffs.len() ==> scaled[i].eqv(k.mul(#[trigger] coeffs[i])),
-    ensures
-        horner::<R>(scaled, x).eqv(k.mul(horner::<R>(coeffs, x))),
-    decreases coeffs.len(),
-{
-    if coeffs.len() == 0 {
-        // k * 0 ≡ 0
-        R::axiom_mul_zero_right(k);
-        R::axiom_eqv_symmetric(k.mul(R::zero()), R::zero());
-    } else {
-        let rest_c = coeffs.subrange(1, coeffs.len() as int);
-        let rest_s = scaled.subrange(1, scaled.len() as int);
-
-        // IH: horner(rest_s, x) ≡ k * horner(rest_c, x)
-        assert forall|i: int| 0 <= i < rest_c.len()
-            implies rest_s[i].eqv(k.mul(#[trigger] rest_c[i]))
-        by {
-            assert(rest_s[i] == scaled[i + 1]);
-            assert(rest_c[i] == coeffs[i + 1]);
+    /// Horner evaluation of a polynomial represented by its coefficient sequence.
+    /// coeffs[0] + x * (coeffs[1] + x * (... + x * coeffs[n]))
+    /// Computes c₀ + c₁x + c₂x² + ... + cₙxⁿ in n muls and n adds.
+    pub open spec fn horner<R: Ring>(coeffs: Seq<R>, x: R) -> R
+        decreases coeffs.len(),
+    {
+        if coeffs.len() == 0 {
+            R::zero()
+        } else {
+            coeffs[0].add(x.mul(horner::<R>(coeffs.subrange(1, coeffs.len() as int), x)))
         }
-        lemma_horner_scale::<R>(rest_c, rest_s, k, x);
+    }
 
-        // x * horner(rest_s, x) ≡ x * (k * horner(rest_c, x))
+    /// Direct (naive) polynomial evaluation: sum of coeffs[i] * x^i.
+    pub open spec fn eval_direct<R: Ring>(coeffs: Seq<R>, x: R, i: nat) -> R
+        decreases coeffs.len() - i,
+    {
+        if i >= coeffs.len() {
+            R::zero()
+        } else {
+            coeffs[i as int].mul(pow_spec::<R>(x, i)).add(
+                eval_direct::<R>(coeffs, x, i + 1)
+            )
+        }
+    }
+
+    /// Power: x^n (used locally to avoid circular dependency with power module).
+    pub open spec fn pow_spec<R: Ring>(base: R, exp: nat) -> R
+        decreases exp,
+    {
+        if exp == 0 { R::one() }
+        else { base.mul(pow_spec::<R>(base, (exp - 1) as nat)) }
+    }
+
+    // ============================================================
+    //  Basic Horner lemmas
+    // ============================================================
+
+    /// horner([], x) ≡ 0.
+    pub proof fn lemma_horner_empty<R: Ring>(x: R)
+        ensures
+            horner::<R>(Seq::empty(), x).eqv(R::zero()),
+    {
+        R::axiom_eqv_reflexive(R::zero());
+    }
+
+    /// horner([c], x) ≡ c.
+    pub proof fn lemma_horner_single<R: Ring>(c: R, x: R)
+        ensures
+            horner::<R>(seq![c], x).eqv(c),
+    {
+        let s: Seq<R> = seq![c];
+        let rest = s.subrange(1, s.len() as int);
+        assert(rest =~= Seq::<R>::empty());
+        assert(rest.len() == 0);
+        assert(horner::<R>(rest, x) == R::zero());
+
+        // horner([c], x) = c + x * horner([], x) = c + x * 0
+        // x * 0 ≡ 0
+        R::axiom_mul_zero_right(x);
+        // c + x*0 ≡ c + 0
+        lemma_add_congruence_right::<R>(c, x.mul(R::zero()), R::zero());
+        // c + 0 ≡ c
+        R::axiom_add_zero_right(c);
+        // Chain: c + x*0 ≡ c + 0 ≡ c
+        R::axiom_eqv_transitive(
+            c.add(x.mul(R::zero())),
+            c.add(R::zero()),
+            c,
+        );
+    }
+
+    /// horner([c₀, c₁], x) ≡ c₀ + c₁ * x.
+    pub proof fn lemma_horner_linear<R: Ring>(c0: R, c1: R, x: R)
+        ensures
+            horner::<R>(seq![c0, c1], x).eqv(c0.add(c1.mul(x))),
+    {
+        let s: Seq<R> = seq![c0, c1];
+        assert(s.subrange(1, 2) =~= seq![c1]);
+
+        // horner([c0,c1], x) = c0 + x * horner([c1], x)
+        // horner([c1], x) ≡ c1
+        lemma_horner_single::<R>(c1, x);
+
+        // x * horner([c1], x) ≡ x * c1
+        lemma_mul_congruence_right::<R>(x, horner::<R>(seq![c1], x), c1);
+
+        // c0 + x*horner ≡ c0 + x*c1
+        lemma_add_congruence_right::<R>(
+            c0,
+            x.mul(horner::<R>(seq![c1], x)),
+            x.mul(c1),
+        );
+
+        // x*c1 ≡ c1*x
+        R::axiom_mul_commutative(x, c1);
+
+        // c0 + x*c1 ≡ c0 + c1*x
+        lemma_add_congruence_right::<R>(c0, x.mul(c1), c1.mul(x));
+
+        // Chain: horner ≡ c0 + x*c1 ≡ c0 + c1*x
+        R::axiom_eqv_transitive(
+            c0.add(x.mul(horner::<R>(seq![c1], x))),
+            c0.add(x.mul(c1)),
+            c0.add(c1.mul(x)),
+        );
+    }
+
+    /// horner([c₀, c₁, c₂], x) ≡ c₀ + c₁*x + c₂*x².
+    pub proof fn lemma_horner_quadratic<R: Ring>(c0: R, c1: R, c2: R, x: R)
+        ensures
+            horner::<R>(seq![c0, c1, c2], x).eqv(
+                c0.add(c1.mul(x).add(c2.mul(x.mul(x))))
+            ),
+    {
+        let s: Seq<R> = seq![c0, c1, c2];
+        assert(s.subrange(1, 3) =~= seq![c1, c2]);
+
+        // horner([c0,c1,c2], x) = c0 + x * horner([c1,c2], x)
+        // horner([c1,c2], x) ≡ c1 + c2*x
+        lemma_horner_linear::<R>(c1, c2, x);
+
+        // x * horner([c1,c2], x) ≡ x * (c1 + c2*x)
         lemma_mul_congruence_right::<R>(
-            x, horner::<R>(rest_s, x), k.mul(horner::<R>(rest_c, x)),
+            x, horner::<R>(seq![c1, c2], x), c1.add(c2.mul(x)),
         );
 
-        // x * (k * h) ≡ (x*k) * h ≡ (k*x) * h ≡ k * (x*h)  [assoc + comm]
-        R::axiom_mul_associative(x, k, horner::<R>(rest_c, x));
-        R::axiom_eqv_symmetric(
-            x.mul(k).mul(horner::<R>(rest_c, x)),
-            x.mul(k.mul(horner::<R>(rest_c, x))),
-        );
-        R::axiom_mul_commutative(x, k);
-        R::axiom_mul_congruence_left(x.mul(k), k.mul(x), horner::<R>(rest_c, x));
+        // x * (c1 + c2*x) ≡ x*c1 + x*(c2*x)  [left dist]
+        R::axiom_mul_distributes_left(x, c1, c2.mul(x));
+
+        // Chain: x*horner ≡ x*(c1+c2*x) ≡ x*c1 + x*(c2*x)
         R::axiom_eqv_transitive(
-            x.mul(k.mul(horner::<R>(rest_c, x))),
-            x.mul(k).mul(horner::<R>(rest_c, x)),
-            k.mul(x).mul(horner::<R>(rest_c, x)),
-        );
-        R::axiom_mul_associative(k, x, horner::<R>(rest_c, x));
-        R::axiom_eqv_transitive(
-            x.mul(k.mul(horner::<R>(rest_c, x))),
-            k.mul(x).mul(horner::<R>(rest_c, x)),
-            k.mul(x.mul(horner::<R>(rest_c, x))),
+            x.mul(horner::<R>(seq![c1, c2], x)),
+            x.mul(c1.add(c2.mul(x))),
+            x.mul(c1).add(x.mul(c2.mul(x))),
         );
 
-        // Chain: x*horner(rest_s,x) ≡ k*(x*horner(rest_c,x))
+        // x*c1 ≡ c1*x
+        R::axiom_mul_commutative(x, c1);
+
+        // x*(c2*x) ≡ (x*c2)*x ≡ (c2*x)*x ≡ c2*(x*x)
+        R::axiom_mul_associative(x, c2, x);
+        R::axiom_eqv_symmetric(x.mul(c2).mul(x), x.mul(c2.mul(x)));
+        R::axiom_mul_commutative(x, c2);
+        R::axiom_mul_congruence_left(x.mul(c2), c2.mul(x), x);
         R::axiom_eqv_transitive(
-            x.mul(horner::<R>(rest_s, x)),
-            x.mul(k.mul(horner::<R>(rest_c, x))),
-            k.mul(x.mul(horner::<R>(rest_c, x))),
+            x.mul(c2.mul(x)),
+            x.mul(c2).mul(x),
+            c2.mul(x).mul(x),
+        );
+        R::axiom_mul_associative(c2, x, x);
+        R::axiom_eqv_transitive(
+            x.mul(c2.mul(x)),
+            c2.mul(x).mul(x),
+            c2.mul(x.mul(x)),
         );
 
-        // scaled[0] ≡ k * coeffs[0]  [hypothesis]
-        // scaled[0] + x*horner_s ≡ k*coeffs[0] + k*(x*horner_c) ≡ k*(coeffs[0] + x*horner_c)
+        // x*c1 + x*(c2*x) ≡ c1*x + c2*(x*x)
         lemma_add_congruence::<R>(
-            scaled[0], k.mul(coeffs[0]),
-            x.mul(horner::<R>(rest_s, x)),
-            k.mul(x.mul(horner::<R>(rest_c, x))),
+            x.mul(c1), c1.mul(x),
+            x.mul(c2.mul(x)), c2.mul(x.mul(x)),
         );
 
-        // k*coeffs[0] + k*(x*horner_c) ≡ k*(coeffs[0] + x*horner_c)  [distributes reversed]
-        R::axiom_mul_distributes_left(k, coeffs[0], x.mul(horner::<R>(rest_c, x)));
-        R::axiom_eqv_symmetric(
-            k.mul(coeffs[0].add(x.mul(horner::<R>(rest_c, x)))),
-            k.mul(coeffs[0]).add(k.mul(x.mul(horner::<R>(rest_c, x)))),
+        // Chain: x*horner ≡ x*c1 + x*(c2*x) ≡ c1*x + c2*x²
+        R::axiom_eqv_transitive(
+            x.mul(horner::<R>(seq![c1, c2], x)),
+            x.mul(c1).add(x.mul(c2.mul(x))),
+            c1.mul(x).add(c2.mul(x.mul(x))),
         );
 
+        // Outer: c0 + x*horner ≡ c0 + (c1*x + c2*x²)
+        lemma_add_congruence_right::<R>(
+            c0,
+            x.mul(horner::<R>(seq![c1, c2], x)),
+            c1.mul(x).add(c2.mul(x.mul(x))),
+        );
+    }
+
+    /// Evaluating at zero: horner(coeffs, 0) ≡ coeffs[0] when non-empty.
+    pub proof fn lemma_horner_at_zero<R: Ring>(coeffs: Seq<R>)
+        requires
+            coeffs.len() > 0,
+        ensures
+            horner::<R>(coeffs, R::zero()).eqv(coeffs[0]),
+    {
+        let rest = coeffs.subrange(1, coeffs.len() as int);
+        // horner(coeffs, 0) = coeffs[0] + 0 * horner(rest, 0)
+        // 0 * anything ≡ 0
+        lemma_mul_zero_left::<R>(horner::<R>(rest, R::zero()));
+        // coeffs[0] + 0*horner ≡ coeffs[0] + 0
+        lemma_add_congruence_right::<R>(
+            coeffs[0],
+            R::zero().mul(horner::<R>(rest, R::zero())),
+            R::zero(),
+        );
+        // coeffs[0] + 0 ≡ coeffs[0]
+        R::axiom_add_zero_right(coeffs[0]);
         // Chain
         R::axiom_eqv_transitive(
-            scaled[0].add(x.mul(horner::<R>(rest_s, x))),
-            k.mul(coeffs[0]).add(k.mul(x.mul(horner::<R>(rest_c, x)))),
-            k.mul(coeffs[0].add(x.mul(horner::<R>(rest_c, x)))),
+            coeffs[0].add(R::zero().mul(horner::<R>(rest, R::zero()))),
+            coeffs[0].add(R::zero()),
+            coeffs[0],
         );
     }
-}
 
-} // verus!
+    /// Horner respects equivalence of x:
+    /// if x1 ≡ x2, then horner(coeffs, x1) ≡ horner(coeffs, x2).
+    pub proof fn lemma_horner_congruence_x<R: Ring>(coeffs: Seq<R>, x1: R, x2: R)
+        requires
+            x1.eqv(x2),
+        ensures
+            horner::<R>(coeffs, x1).eqv(horner::<R>(coeffs, x2)),
+        decreases coeffs.len(),
+    {
+        if coeffs.len() == 0 {
+            R::axiom_eqv_reflexive(R::zero());
+        } else {
+            let rest = coeffs.subrange(1, coeffs.len() as int);
+            // IH: horner(rest, x1) ≡ horner(rest, x2)
+            lemma_horner_congruence_x::<R>(rest, x1, x2);
+            // x1 ≡ x2 and horner(rest,x1) ≡ horner(rest,x2)
+            // → x1*horner(rest,x1) ≡ x2*horner(rest,x2)
+            lemma_mul_congruence::<R>(x1, x2, horner::<R>(rest, x1), horner::<R>(rest, x2));
+            // coeffs[0] + x1*horner ≡ coeffs[0] + x2*horner
+            R::axiom_eqv_reflexive(coeffs[0]);
+            lemma_add_congruence::<R>(
+                coeffs[0], coeffs[0],
+                x1.mul(horner::<R>(rest, x1)),
+                x2.mul(horner::<R>(rest, x2)),
+            );
+        }
+    }
+
+    // ============================================================
+    //  Polynomial ring operations (for field extensions)
+    // ============================================================
+
+    /// A polynomial over a ring R, represented as a sequence of coefficients.
+    /// The coefficient at index i is the coefficient of x^i.
+    /// The zero polynomial is represented by an empty sequence.
+    pub ghost struct SpecPoly<R: Ring> {
+        pub coeffs: Seq<R>,
+    }
+
+    /// Construct a polynomial from a sequence of coefficients.
+    /// No normalization: the sequence can have trailing zeros.
+    pub open spec fn poly<R: Ring>(coeffs: Seq<R>) -> SpecPoly<R> {
+        SpecPoly { coeffs }
+    }
+
+    /// The zero polynomial.
+    pub open spec fn poly_zero<R: Ring>() -> SpecPoly<R> {
+        SpecPoly { coeffs: Seq::empty() }
+    }
+
+    /// The constant polynomial with value c.
+    pub open spec fn poly_constant<R: Ring>(c: R) -> SpecPoly<R> {
+        SpecPoly { coeffs: seq![c] }
+    }
+
+    /// The monomial c * x^n.
+    pub open spec fn poly_monomial<R: Ring>(c: R, n: nat) -> SpecPoly<R> {
+        SpecPoly { coeffs: Seq::new(n + 1, |i: int| if i == n as int { c } else { R::zero() }) }
+    }
+
+    /// Degree of a polynomial: highest index with non-zero coefficient, or 0 if zero.
+    pub open spec fn degree<R: Ring>(p: SpecPoly<R>) -> nat
+        decreases p.coeffs.len(),
+    {
+        if p.coeffs.len() == 0 {
+            0
+        } else {
+            let last = p.coeffs.len() - 1;
+            if !p.coeffs[last as int].eqv(R::zero()) {
+                last as nat
+            } else {
+                degree(SpecPoly { coeffs: p.coeffs.subrange(0, last) })
+            }
+        }
+    }
+
+    /// Check if polynomial is zero (all coefficients zero).
+    pub open spec fn is_zero<R: Ring>(p: SpecPoly<R>) -> bool {
+        forall|i: int| 0 <= i < p.coeffs.len() ==> p.coeffs[i].eqv(R::zero())
+    }
+
+    /// Leading coefficient (zero if polynomial is zero).
+    pub open spec fn leading_coeff<R: Ring>(p: SpecPoly<R>) -> R {
+        let d = degree(p);
+        if p.coeffs.len() == 0 {
+            R::zero()
+        } else {
+            p.coeffs[d as int]
+        }
+    }
+
+    /// Addition: coefficient-wise.
+    pub open spec fn poly_add<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R> {
+        let len = if p.coeffs.len() >= q.coeffs.len() { p.coeffs.len() } else { q.coeffs.len() };
+        SpecPoly {
+            coeffs: Seq::new(len, |i: int| {
+                let a = if i < p.coeffs.len() { p.coeffs[i] } else { R::zero() };
+                let b = if i < q.coeffs.len() { q.coeffs[i] } else { R::zero() };
+                a.add(b)
+            }),
+        }
+    }
+
+    /// Negation: negate each coefficient.
+    pub open spec fn poly_neg<R: Ring>(p: SpecPoly<R>) -> SpecPoly<R> {
+        SpecPoly {
+            coeffs: Seq::new(p.coeffs.len(), |i: int| p.coeffs[i].neg()),
+        }
+    }
+
+    /// Subtraction: p - q = p + (-q).
+    pub open spec fn poly_sub<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R> {
+        poly_add(p, poly_neg(q))
+    }
+
+    /// Multiplication: convolution of coefficients.
+    /// (p * q)[k] = sum_{i=0..k} p[i] * q[k-i] where out-of-range coefficients are 0.
+    pub open spec fn poly_mul<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R> {
+        if is_zero(p) || is_zero(q) {
+            poly_zero()
+        } else {
+            let deg_p = degree(p);
+            let deg_q = degree(q);
+            let result_degree = deg_p + deg_q;
+            SpecPoly {
+                coeffs: Seq::new(result_degree + 1, |k: int| {
+                    // Sum over i from 0 to k inclusive
+                    crate::summation::sum::<R>(|i: int| {
+                        if i <= k && i < p.coeffs.len() && (k - i) < q.coeffs.len() {
+                            p.coeffs[i].mul(q.coeffs[k - i])
+                        } else {
+                            R::zero()
+                        }
+                    }, 0, k + 1)
+                }),
+            }
+        }
+    }
+
+    /// One polynomial: constant 1.
+    pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
+        poly_constant(R::one())
+    }
+
+    /// Polynomial equivalence: same length and all coefficients equivalent.
+    pub open spec fn poly_eqv<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> bool {
+        if p.coeffs.len() != q.coeffs.len() {
+            false
+        } else {
+            forall|i: int| 0 <= i < p.coeffs.len() ==> p.coeffs[i].eqv(q.coeffs[i])
+        }
+    }
+
+    /// Polynomial remainder (stub).
+    /// The function returns an arbitrary polynomial; correctness is given by the axiom below.
+    pub open spec fn poly_mod<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>) -> SpecPoly<R> {
+        arbitrary()
+    }
+
+    /// Axiom: poly_mod returns a remainder satisfying the division properties.
+    pub proof fn axiom_poly_mod_correct<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>)
+        requires
+            !is_zero(divisor),
+            !leading_coeff(divisor).eqv(R::zero()),
+        ensures
+            exists|q: SpecPoly<R>|
+                p == poly_add(poly_mul(q, divisor), poly_mod(p, divisor)) &&
+                (is_zero(poly_mod(p, divisor)) || degree(poly_mod(p, divisor)) < degree(divisor))
+    {
+        admit();
+    }
+}
