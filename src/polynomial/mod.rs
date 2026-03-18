@@ -357,11 +357,10 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
     // ============================================================
     // Note: We use a fuel parameter for termination. The wrapper `poly_div_rem` supplies enough fuel.
     /// Recursive division with remainder.
-    pub proof fn poly_div_rem_rec<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>, fuel: nat) -> (SpecPoly<R>, SpecPoly<R>)
+    pub open spec fn poly_div_rem_rec<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>, fuel: nat) -> (SpecPoly<R>, SpecPoly<R>)
         decreases fuel,
     {
         if fuel == 0 {
-            // Out of fuel: return arbitrary result
             (poly_zero(), p)
         } else if is_zero(divisor) || leading_coeff(divisor).eqv(R::zero()) {
             (poly_zero(), p)
@@ -369,18 +368,13 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
             (poly_zero(), p)
         } else {
             let d_val = degree(p) - degree(divisor);
-            // Since degree(p) >= degree(divisor), d_val >= 0. We'll assert it (admitted for now).
-            assert(d_val >= 0) by { admit(); }
             let d = d_val as nat;
             let lc_p = leading_coeff(p);
             let lc_div = leading_coeff(divisor);
             let factor = lc_p.mul(lc_div.recip());
             let term = poly_mul(poly_monomial(factor, d), divisor);
             let p_prime = poly_sub(p, term);
-            // For termination (via fuel) we don't need to show degree decrease, but we need it for correctness.
-            // We'll admit the degree decrease lemma here.
-            assert(degree(p_prime) < degree(p)) by { admit(); }
-            let (q_prime, r_prime) = poly_div_rem_rec(p_prime, divisor, fuel - 1);
+            let (q_prime, r_prime) = poly_div_rem_rec(p_prime, divisor, (fuel - 1) as nat);
             (poly_add(q_prime, poly_monomial(factor, d)), r_prime)
         }
     }

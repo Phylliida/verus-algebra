@@ -1,6 +1,6 @@
-use vstd::prelude::*;
-use crate::traits::ring::Ring;
 use crate::traits::partial_order::PartialOrder;
+use crate::traits::ring::Ring;
+use vstd::prelude::*;
 
 verus! {
 
@@ -14,6 +14,16 @@ pub trait OrderedRing: Ring + PartialOrder {
 
     /// Strict less-than comparison.
     spec fn lt(self, other: Self) -> bool;
+
+    /// Greater-than-or-equal: a >= b
+    open spec fn ge(self, other: Self) -> bool {
+        other.lt(self)
+    }
+
+    /// Strict greater-than: a > b
+    open spec fn gt(self, other: Self) -> bool {
+        self.lt(other) == false && self.eqv(other) == false
+    }
 
     // ---- axioms: total order ----
 
