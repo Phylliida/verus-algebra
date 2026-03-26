@@ -1,6 +1,7 @@
 use vstd::prelude::*;
 use crate::traits::ring::Ring;
 use crate::traits::ordered_ring::OrderedRing;
+use crate::traits::additive_group::AdditiveGroup;
 use crate::lemmas::additive_group_lemmas::*;
 use crate::lemmas::ring_lemmas::*;
 
@@ -35,7 +36,7 @@ pub open spec fn det3<R: Ring>(
 
 /// (p+q) - (r+s) ≡ (p-r) + (q-s).
 /// Useful for distributing subtraction over component-wise pairs.
-pub proof fn lemma_sub_pairs<A: Ring>(p: A, q: A, r: A, s: A)
+pub proof fn lemma_sub_pairs<A: AdditiveGroup>(p: A, q: A, r: A, s: A)
     ensures
         p.add(q).sub(r.add(s)).eqv(p.sub(r).add(q.sub(s))),
 {
