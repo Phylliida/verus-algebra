@@ -612,4 +612,60 @@ pub proof fn lemma_max_absorption<R: OrderedRing>(a: R, b: R)
     }
 }
 
+/// max respects eqv: a1 ≡ a2 and b1 ≡ b2 implies max(a1,b1) ≡ max(a2,b2).
+pub proof fn lemma_max_congruence<R: OrderedRing>(a1: R, a2: R, b1: R, b2: R)
+    requires a1.eqv(a2), b1.eqv(b2),
+    ensures max::<R>(a1, b1).eqv(max::<R>(a2, b2)),
+{
+    if a1.le(b1) {
+        // max(a1,b1) = b1
+        R::axiom_le_congruence(a1, a2, b1, b2);
+        // a2 ≤ b2, so max(a2,b2) = b2. Need b1 ≡ b2. ✓
+    } else {
+        // max(a1,b1) = a1
+        R::axiom_le_total(a1, b1);
+        // b1 ≤ a1
+        R::axiom_le_congruence(b1, b2, a1, a2);
+        // b2 ≤ a2
+        R::axiom_le_total(a2, b2);
+        if a2.le(b2) {
+            // a2 ≤ b2 AND b2 ≤ a2 → a2 ≡ b2
+            R::axiom_le_antisymmetric(a2, b2);
+            // max(a2,b2) = b2 ≡ a2 ≡ a1
+            R::axiom_eqv_symmetric(a2, b2);
+            R::axiom_eqv_transitive(a1, a2, b2);
+        }
+        // else ¬(a2 ≤ b2), max(a2,b2) = a2, need a1 ≡ a2. ✓
+    }
+}
+
+/// min respects eqv: a1 ≡ a2 and b1 ≡ b2 implies min(a1,b1) ≡ min(a2,b2).
+pub proof fn lemma_min_congruence<R: OrderedRing>(a1: R, a2: R, b1: R, b2: R)
+    requires a1.eqv(a2), b1.eqv(b2),
+    ensures min::<R>(a1, b1).eqv(min::<R>(a2, b2)),
+{
+    if a1.le(b1) {
+        // min(a1,b1) = a1
+        R::axiom_le_congruence(a1, a2, b1, b2);
+        // a2 ≤ b2, so min(a2,b2) = a2. Need a1 ≡ a2. ✓
+    } else {
+        // min(a1,b1) = b1
+        R::axiom_le_total(a1, b1);
+        // b1 ≤ a1
+        R::axiom_le_congruence(b1, b2, a1, a2);
+        // b2 ≤ a2
+        R::axiom_le_total(a2, b2);
+        if a2.le(b2) {
+            // a2 ≤ b2 AND b2 ≤ a2 → a2 ≡ b2
+            R::axiom_le_antisymmetric(a2, b2);
+            // min(a2,b2) = a2. Need b1 ≡ a2.
+            // We have b1 ≡ b2 and a2 ≡ b2 → b2 ≡ a2 (symmetric)
+            R::axiom_eqv_symmetric(a2, b2);
+            // b1 ≡ b2 ≡ a2 → b1 ≡ a2 (transitive)
+            R::axiom_eqv_transitive(b1, b2, a2);
+        }
+        // else ¬(a2 ≤ b2), min(a2,b2) = b2. Need b1 ≡ b2. ✓
+    }
+}
+
 } // verus!
