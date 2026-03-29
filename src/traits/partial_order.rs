@@ -3,29 +3,29 @@ use crate::traits::equivalence::Equivalence;
 
 verus! {
 
-/// Partial order compatible with an equivalence relation.
+///  Partial order compatible with an equivalence relation.
 ///
-/// Provides a `le` relation satisfying reflexivity, antisymmetry (up to eqv),
-/// transitivity, and congruence with respect to `eqv`.
+///  Provides a `le` relation satisfying reflexivity, antisymmetry (up to eqv),
+///  transitivity, and congruence with respect to `eqv`.
 ///
-/// This is a weaker structure than `OrderedRing` — it does not require
-/// totality or compatibility with ring operations. Types like intervals
-/// ordered by containment can implement this trait.
+///  This is a weaker structure than `OrderedRing` — it does not require
+///  totality or compatibility with ring operations. Types like intervals
+///  ordered by containment can implement this trait.
 pub trait PartialOrder: Equivalence {
-    // ---- operations ----
+    //  ---- operations ----
 
-    /// Less-than-or-equal comparison.
+    ///  Less-than-or-equal comparison.
     spec fn le(self, other: Self) -> bool;
 
-    // ---- axioms: partial order ----
+    //  ---- axioms: partial order ----
 
-    /// Reflexivity: a <= a.
+    ///  Reflexivity: a <= a.
     proof fn axiom_le_reflexive(a: Self)
         ensures
             a.le(a),
     ;
 
-    /// Antisymmetry: a <= b && b <= a implies a ≡ b.
+    ///  Antisymmetry: a <= b && b <= a implies a ≡ b.
     proof fn axiom_le_antisymmetric(a: Self, b: Self)
         requires
             a.le(b),
@@ -34,7 +34,7 @@ pub trait PartialOrder: Equivalence {
             a.eqv(b),
     ;
 
-    /// Transitivity: a <= b && b <= c implies a <= c.
+    ///  Transitivity: a <= b && b <= c implies a <= c.
     proof fn axiom_le_transitive(a: Self, b: Self, c: Self)
         requires
             a.le(b),
@@ -43,9 +43,9 @@ pub trait PartialOrder: Equivalence {
             a.le(c),
     ;
 
-    // ---- axioms: congruence ----
+    //  ---- axioms: congruence ----
 
-    /// Order respects equivalence.
+    ///  Order respects equivalence.
     proof fn axiom_le_congruence(a1: Self, a2: Self, b1: Self, b2: Self)
         requires
             a1.eqv(a2),
@@ -56,4 +56,4 @@ pub trait PartialOrder: Equivalence {
     ;
 }
 
-} // verus!
+} //  verus!

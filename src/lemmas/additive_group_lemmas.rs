@@ -4,8 +4,8 @@ use crate::lemmas::additive_commutative_monoid_lemmas;
 
 verus! {
 
-/// Left identity: 0 + a ≡ a.
-/// Derived from right identity + commutativity.
+///  Left identity: 0 + a ≡ a.
+///  Derived from right identity + commutativity.
 pub proof fn lemma_add_zero_left<A: AdditiveGroup>(a: A)
     ensures
         A::zero().add(a).eqv(a),
@@ -13,8 +13,8 @@ pub proof fn lemma_add_zero_left<A: AdditiveGroup>(a: A)
     additive_commutative_monoid_lemmas::lemma_add_zero_left::<A>(a);
 }
 
-/// Left inverse: (-a) + a ≡ 0.
-/// Derived from right inverse + commutativity.
+///  Left inverse: (-a) + a ≡ 0.
+///  Derived from right inverse + commutativity.
 pub proof fn lemma_add_inverse_left<A: AdditiveGroup>(a: A)
     ensures
         a.neg().add(a).eqv(A::zero()),
@@ -24,9 +24,9 @@ pub proof fn lemma_add_inverse_left<A: AdditiveGroup>(a: A)
     A::axiom_eqv_transitive(a.neg().add(a), a.add(a.neg()), A::zero());
 }
 
-/// Addition respects equivalence on the right:
-/// if b ≡ c then a + b ≡ a + c.
-/// Derived from commutativity + left congruence.
+///  Addition respects equivalence on the right:
+///  if b ≡ c then a + b ≡ a + c.
+///  Derived from commutativity + left congruence.
 pub proof fn lemma_add_congruence_right<A: AdditiveGroup>(a: A, b: A, c: A)
     requires
         b.eqv(c),
@@ -36,7 +36,7 @@ pub proof fn lemma_add_congruence_right<A: AdditiveGroup>(a: A, b: A, c: A)
     additive_commutative_monoid_lemmas::lemma_add_congruence_right::<A>(a, b, c);
 }
 
-/// Full addition congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 + b1 ≡ a2 + b2.
+///  Full addition congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 + b1 ≡ a2 + b2.
 pub proof fn lemma_add_congruence<A: AdditiveGroup>(a1: A, a2: A, b1: A, b2: A)
     requires
         a1.eqv(a2),
@@ -47,91 +47,91 @@ pub proof fn lemma_add_congruence<A: AdditiveGroup>(a1: A, a2: A, b1: A, b2: A)
     additive_commutative_monoid_lemmas::lemma_add_congruence::<A>(a1, a2, b1, b2);
 }
 
-/// Right cancellation: if a + k ≡ b + k then a ≡ b.
+///  Right cancellation: if a + k ≡ b + k then a ≡ b.
 pub proof fn lemma_add_right_cancel<A: AdditiveGroup>(a: A, b: A, k: A)
     requires
         a.add(k).eqv(b.add(k)),
     ensures
         a.eqv(b),
 {
-    // (a + k) + (-k) ≡ (b + k) + (-k)   [congruence on given]
+    //  (a + k) + (-k) ≡ (b + k) + (-k)   [congruence on given]
     A::axiom_add_congruence_left(a.add(k), b.add(k), k.neg());
 
-    // k + (-k) ≡ 0
+    //  k + (-k) ≡ 0
     A::axiom_add_inverse_right(k);
 
-    // --- Chain for a: (a + k) + (-k) ≡ a ---
-    // (a + k) + (-k) ≡ a + (k + (-k))   [associativity]
+    //  --- Chain for a: (a + k) + (-k) ≡ a ---
+    //  (a + k) + (-k) ≡ a + (k + (-k))   [associativity]
     A::axiom_add_associative(a, k, k.neg());
-    // a + (k + (-k)) ≡ a + 0             [congruence_right]
+    //  a + (k + (-k)) ≡ a + 0             [congruence_right]
     lemma_add_congruence_right::<A>(a, k.add(k.neg()), A::zero());
-    // a + 0 ≡ a                           [right identity]
+    //  a + 0 ≡ a                           [right identity]
     A::axiom_add_zero_right(a);
-    // (a+k)+(-k) ≡ a+(k+(-k)) ≡ a+0 ≡ a
+    //  (a+k)+(-k) ≡ a+(k+(-k)) ≡ a+0 ≡ a
     A::axiom_eqv_transitive(a.add(k).add(k.neg()), a.add(k.add(k.neg())), a.add(A::zero()));
     A::axiom_eqv_transitive(a.add(k).add(k.neg()), a.add(A::zero()), a);
 
-    // --- Chain for b: (b + k) + (-k) ≡ b ---
+    //  --- Chain for b: (b + k) + (-k) ≡ b ---
     A::axiom_add_associative(b, k, k.neg());
     lemma_add_congruence_right::<A>(b, k.add(k.neg()), A::zero());
     A::axiom_add_zero_right(b);
     A::axiom_eqv_transitive(b.add(k).add(k.neg()), b.add(k.add(k.neg())), b.add(A::zero()));
     A::axiom_eqv_transitive(b.add(k).add(k.neg()), b.add(A::zero()), b);
 
-    // a ≡ (a+k)+(-k) ≡ (b+k)+(-k) ≡ b
+    //  a ≡ (a+k)+(-k) ≡ (b+k)+(-k) ≡ b
     A::axiom_eqv_symmetric(a.add(k).add(k.neg()), a);
     A::axiom_eqv_transitive(a, a.add(k).add(k.neg()), b.add(k).add(k.neg()));
     A::axiom_eqv_transitive(a, b.add(k).add(k.neg()), b);
 }
 
-/// Left cancellation: if k + a ≡ k + b then a ≡ b.
+///  Left cancellation: if k + a ≡ k + b then a ≡ b.
 pub proof fn lemma_add_left_cancel<A: AdditiveGroup>(a: A, b: A, k: A)
     requires
         k.add(a).eqv(k.add(b)),
     ensures
         a.eqv(b),
 {
-    // k + a ≡ a + k   [comm]
+    //  k + a ≡ a + k   [comm]
     A::axiom_add_commutative(k, a);
-    // k + b ≡ b + k   [comm]
+    //  k + b ≡ b + k   [comm]
     A::axiom_add_commutative(k, b);
-    // a + k ≡ k + a ≡ k + b ≡ b + k
+    //  a + k ≡ k + a ≡ k + b ≡ b + k
     A::axiom_eqv_symmetric(k.add(a), a.add(k));
     A::axiom_eqv_transitive(a.add(k), k.add(a), k.add(b));
     A::axiom_eqv_transitive(a.add(k), k.add(b), b.add(k));
     lemma_add_right_cancel::<A>(a, b, k);
 }
 
-/// Double negation: -(-a) ≡ a.
+///  Double negation: -(-a) ≡ a.
 pub proof fn lemma_neg_involution<A: AdditiveGroup>(a: A)
     ensures
         a.neg().neg().eqv(a),
 {
-    // -a + (-(-a)) ≡ 0   [right inverse of -a]
+    //  -a + (-(-a)) ≡ 0   [right inverse of -a]
     A::axiom_add_inverse_right(a.neg());
-    // -a + a ≡ 0          [left inverse of a]
+    //  -a + a ≡ 0          [left inverse of a]
     lemma_add_inverse_left::<A>(a);
-    // So: -a + (-(-a)) ≡ 0 ≡ -a + a
+    //  So: -a + (-(-a)) ≡ 0 ≡ -a + a
     A::axiom_eqv_symmetric(a.neg().add(a), A::zero());
     A::axiom_eqv_transitive(
         a.neg().add(a.neg().neg()),
         A::zero(),
         a.neg().add(a),
     );
-    // By left cancellation (cancel -a): (-(-a)) ≡ a
+    //  By left cancellation (cancel -a): (-(-a)) ≡ a
     lemma_add_left_cancel::<A>(a.neg().neg(), a, a.neg());
 }
 
-/// Negation of zero: -0 ≡ 0.
+///  Negation of zero: -0 ≡ 0.
 pub proof fn lemma_neg_zero<A: AdditiveGroup>()
     ensures
         A::zero().neg().eqv(A::zero()),
 {
-    // 0 + (-0) ≡ 0   [right inverse]
+    //  0 + (-0) ≡ 0   [right inverse]
     A::axiom_add_inverse_right(A::zero());
-    // 0 + (-0) ≡ (-0) [left identity]
+    //  0 + (-0) ≡ (-0) [left identity]
     lemma_add_zero_left::<A>(A::zero().neg());
-    // (-0) ≡ 0 + (-0) ≡ 0
+    //  (-0) ≡ 0 + (-0) ≡ 0
     A::axiom_eqv_symmetric(A::zero().add(A::zero().neg()), A::zero().neg());
     A::axiom_eqv_transitive(
         A::zero().neg(),
@@ -140,7 +140,7 @@ pub proof fn lemma_neg_zero<A: AdditiveGroup>()
     );
 }
 
-/// a - a ≡ 0.
+///  a - a ≡ 0.
 pub proof fn lemma_sub_self<A: AdditiveGroup>(a: A)
     ensures
         a.sub(a).eqv(A::zero()),
@@ -150,7 +150,7 @@ pub proof fn lemma_sub_self<A: AdditiveGroup>(a: A)
     A::axiom_eqv_transitive(a.sub(a), a.add(a.neg()), A::zero());
 }
 
-/// Full subtraction congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 - b1 ≡ a2 - b2.
+///  Full subtraction congruence: if a1 ≡ a2 and b1 ≡ b2 then a1 - b1 ≡ a2 - b2.
 pub proof fn lemma_sub_congruence<A: AdditiveGroup>(a1: A, a2: A, b1: A, b2: A)
     requires
         a1.eqv(a2),
@@ -158,102 +158,102 @@ pub proof fn lemma_sub_congruence<A: AdditiveGroup>(a1: A, a2: A, b1: A, b2: A)
     ensures
         a1.sub(b1).eqv(a2.sub(b2)),
 {
-    // a1 - b1 ≡ a1 + (-b1)
+    //  a1 - b1 ≡ a1 + (-b1)
     A::axiom_sub_is_add_neg(a1, b1);
-    // a2 - b2 ≡ a2 + (-b2)
+    //  a2 - b2 ≡ a2 + (-b2)
     A::axiom_sub_is_add_neg(a2, b2);
-    // -b1 ≡ -b2
+    //  -b1 ≡ -b2
     A::axiom_neg_congruence(b1, b2);
-    // a1 + (-b1) ≡ a2 + (-b2)
+    //  a1 + (-b1) ≡ a2 + (-b2)
     lemma_add_congruence::<A>(a1, a2, b1.neg(), b2.neg());
-    // chain: a1 - b1 ≡ a1 + (-b1) ≡ a2 + (-b2)
+    //  chain: a1 - b1 ≡ a1 + (-b1) ≡ a2 + (-b2)
     A::axiom_eqv_transitive(a1.sub(b1), a1.add(b1.neg()), a2.add(b2.neg()));
-    // a2 + (-b2) ≡ a2 - b2 (symmetric)
+    //  a2 + (-b2) ≡ a2 - b2 (symmetric)
     A::axiom_eqv_symmetric(a2.sub(b2), a2.add(b2.neg()));
     A::axiom_eqv_transitive(a1.sub(b1), a2.add(b2.neg()), a2.sub(b2));
 }
 
-/// (a + b) - b ≡ a.
+///  (a + b) - b ≡ a.
 pub proof fn lemma_add_then_sub_cancel<A: AdditiveGroup>(a: A, b: A)
     ensures
         a.add(b).sub(b).eqv(a),
 {
-    // (a+b) - b ≡ (a+b) + (-b)
+    //  (a+b) - b ≡ (a+b) + (-b)
     A::axiom_sub_is_add_neg(a.add(b), b);
-    // (a+b) + (-b) ≡ a + (b + (-b))
+    //  (a+b) + (-b) ≡ a + (b + (-b))
     A::axiom_add_associative(a, b, b.neg());
     A::axiom_eqv_transitive(a.add(b).sub(b), a.add(b).add(b.neg()), a.add(b.add(b.neg())));
-    // b + (-b) ≡ 0
+    //  b + (-b) ≡ 0
     A::axiom_add_inverse_right(b);
-    // a + (b + (-b)) ≡ a + 0
+    //  a + (b + (-b)) ≡ a + 0
     lemma_add_congruence_right::<A>(a, b.add(b.neg()), A::zero());
-    // a + 0 ≡ a
+    //  a + 0 ≡ a
     A::axiom_add_zero_right(a);
-    // chain
+    //  chain
     A::axiom_eqv_transitive(a.add(b).sub(b), a.add(b.add(b.neg())), a.add(A::zero()));
     A::axiom_eqv_transitive(a.add(b).sub(b), a.add(A::zero()), a);
 }
 
-/// (a - b) + b ≡ a.
+///  (a - b) + b ≡ a.
 pub proof fn lemma_sub_then_add_cancel<A: AdditiveGroup>(a: A, b: A)
     ensures
         a.sub(b).add(b).eqv(a),
 {
-    // (a-b) + b ≡ (a + (-b)) + b
+    //  (a-b) + b ≡ (a + (-b)) + b
     A::axiom_sub_is_add_neg(a, b);
     A::axiom_add_congruence_left(a.sub(b), a.add(b.neg()), b);
-    // (a + (-b)) + b ≡ a + ((-b) + b)
+    //  (a + (-b)) + b ≡ a + ((-b) + b)
     A::axiom_add_associative(a, b.neg(), b);
     A::axiom_eqv_transitive(a.sub(b).add(b), a.add(b.neg()).add(b), a.add(b.neg().add(b)));
-    // (-b) + b ≡ 0
+    //  (-b) + b ≡ 0
     lemma_add_inverse_left::<A>(b);
-    // a + ((-b) + b) ≡ a + 0
+    //  a + ((-b) + b) ≡ a + 0
     lemma_add_congruence_right::<A>(a, b.neg().add(b), A::zero());
-    // a + 0 ≡ a
+    //  a + 0 ≡ a
     A::axiom_add_zero_right(a);
-    // chain
+    //  chain
     A::axiom_eqv_transitive(a.sub(b).add(b), a.add(b.neg().add(b)), a.add(A::zero()));
     A::axiom_eqv_transitive(a.sub(b).add(b), a.add(A::zero()), a);
 }
 
-/// -(a + b) ≡ (-a) + (-b).
+///  -(a + b) ≡ (-a) + (-b).
 pub proof fn lemma_neg_add<A: AdditiveGroup>(a: A, b: A)
     ensures
         a.add(b).neg().eqv(a.neg().add(b.neg())),
 {
-    // Show (a+b) + ((-a)+(-b)) ≡ 0, then use left_cancel against the inverse.
-    // (a+b) + ((-a)+(-b))
-    // ≡ a + (b + ((-a)+(-b)))    [assoc]
-    // ≡ a + ((b + (-a)) + (-b))  [assoc inner]
-    // ≡ a + (((-a) + b) + (-b))  [comm b, -a]
-    // ≡ a + ((-a) + (b + (-b)))  [assoc]
-    // ≡ a + ((-a) + 0)           [inverse]
-    // ≡ a + (-a)                 [identity]
-    // ≡ 0                        [inverse]
+    //  Show (a+b) + ((-a)+(-b)) ≡ 0, then use left_cancel against the inverse.
+    //  (a+b) + ((-a)+(-b))
+    //  ≡ a + (b + ((-a)+(-b)))    [assoc]
+    //  ≡ a + ((b + (-a)) + (-b))  [assoc inner]
+    //  ≡ a + (((-a) + b) + (-b))  [comm b, -a]
+    //  ≡ a + ((-a) + (b + (-b)))  [assoc]
+    //  ≡ a + ((-a) + 0)           [inverse]
+    //  ≡ a + (-a)                 [identity]
+    //  ≡ 0                        [inverse]
 
-    // Step 1: b + (-a) ≡ (-a) + b
+    //  Step 1: b + (-a) ≡ (-a) + b
     A::axiom_add_commutative(b, a.neg());
 
-    // Step 2: b + ((-a) + (-b)) ≡ (b + (-a)) + (-b)
+    //  Step 2: b + ((-a) + (-b)) ≡ (b + (-a)) + (-b)
     A::axiom_add_associative(b, a.neg(), b.neg());
     A::axiom_eqv_symmetric(b.add(a.neg()).add(b.neg()), b.add(a.neg().add(b.neg())));
 
-    // Step 3: (b + (-a)) + (-b) ≡ ((-a) + b) + (-b)
+    //  Step 3: (b + (-a)) + (-b) ≡ ((-a) + b) + (-b)
     A::axiom_add_congruence_left(b.add(a.neg()), a.neg().add(b), b.neg());
 
-    // Step 4: ((-a) + b) + (-b) ≡ (-a) + (b + (-b))
+    //  Step 4: ((-a) + b) + (-b) ≡ (-a) + (b + (-b))
     A::axiom_add_associative(a.neg(), b, b.neg());
 
-    // Step 5: b + (-b) ≡ 0
+    //  Step 5: b + (-b) ≡ 0
     A::axiom_add_inverse_right(b);
 
-    // Step 6: (-a) + (b + (-b)) ≡ (-a) + 0
+    //  Step 6: (-a) + (b + (-b)) ≡ (-a) + 0
     lemma_add_congruence_right::<A>(a.neg(), b.add(b.neg()), A::zero());
 
-    // Step 7: (-a) + 0 ≡ -a
+    //  Step 7: (-a) + 0 ≡ -a
     A::axiom_add_zero_right(a.neg());
 
-    // Chain: ((-a)+b)+(-b) ≡ (-a)+(b+(-b)) ≡ (-a)+0 ≡ -a
+    //  Chain: ((-a)+b)+(-b) ≡ (-a)+(b+(-b)) ≡ (-a)+0 ≡ -a
     A::axiom_eqv_transitive(
         a.neg().add(b).add(b.neg()),
         a.neg().add(b.add(b.neg())),
@@ -265,31 +265,31 @@ pub proof fn lemma_neg_add<A: AdditiveGroup>(a: A, b: A)
         a.neg(),
     );
 
-    // Chain: (b+(-a))+(-b) ≡ ((-a)+b)+(-b) ≡ -a
+    //  Chain: (b+(-a))+(-b) ≡ ((-a)+b)+(-b) ≡ -a
     A::axiom_eqv_transitive(
         b.add(a.neg()).add(b.neg()),
         a.neg().add(b).add(b.neg()),
         a.neg(),
     );
 
-    // b + ((-a)+(-b)) ≡ (b+(-a))+(-b) [from step 2 reversed]
-    // Chain: b + ((-a)+(-b)) ≡ (b+(-a))+(-b) ≡ -a
+    //  b + ((-a)+(-b)) ≡ (b+(-a))+(-b) [from step 2 reversed]
+    //  Chain: b + ((-a)+(-b)) ≡ (b+(-a))+(-b) ≡ -a
     A::axiom_eqv_transitive(
         b.add(a.neg().add(b.neg())),
         b.add(a.neg()).add(b.neg()),
         a.neg(),
     );
 
-    // Now: (a+b) + ((-a)+(-b)) ≡ a + (b + ((-a)+(-b)))
+    //  Now: (a+b) + ((-a)+(-b)) ≡ a + (b + ((-a)+(-b)))
     A::axiom_add_associative(a, b, a.neg().add(b.neg()));
-    // a + (b + ((-a)+(-b))) ≡ a + (-a)
+    //  a + (b + ((-a)+(-b))) ≡ a + (-a)
     lemma_add_congruence_right::<A>(a, b.add(a.neg().add(b.neg())), a.neg());
     A::axiom_eqv_transitive(
         a.add(b).add(a.neg().add(b.neg())),
         a.add(b.add(a.neg().add(b.neg()))),
         a.add(a.neg()),
     );
-    // a + (-a) ≡ 0
+    //  a + (-a) ≡ 0
     A::axiom_add_inverse_right(a);
     A::axiom_eqv_transitive(
         a.add(b).add(a.neg().add(b.neg())),
@@ -297,10 +297,10 @@ pub proof fn lemma_neg_add<A: AdditiveGroup>(a: A, b: A)
         A::zero(),
     );
 
-    // Also: (a+b) + (-(a+b)) ≡ 0
+    //  Also: (a+b) + (-(a+b)) ≡ 0
     A::axiom_add_inverse_right(a.add(b));
 
-    // So (a+b) + ((-a)+(-b)) ≡ 0 ≡ (a+b) + (-(a+b))
+    //  So (a+b) + ((-a)+(-b)) ≡ 0 ≡ (a+b) + (-(a+b))
     A::axiom_eqv_symmetric(a.add(b).add(a.add(b).neg()), A::zero());
     A::axiom_eqv_transitive(
         a.add(b).add(a.neg().add(b.neg())),
@@ -308,63 +308,63 @@ pub proof fn lemma_neg_add<A: AdditiveGroup>(a: A, b: A)
         a.add(b).add(a.add(b).neg()),
     );
 
-    // By left cancellation: (-a)+(-b) ≡ -(a+b)
+    //  By left cancellation: (-a)+(-b) ≡ -(a+b)
     lemma_add_left_cancel::<A>(a.neg().add(b.neg()), a.add(b).neg(), a.add(b));
     A::axiom_eqv_symmetric(a.neg().add(b.neg()), a.add(b).neg());
 }
 
-/// a - b ≡ -(b - a).
+///  a - b ≡ -(b - a).
 pub proof fn lemma_sub_antisymmetric<A: AdditiveGroup>(a: A, b: A)
     ensures
         a.sub(b).eqv(b.sub(a).neg()),
 {
-    // a - b ≡ a + (-b)
+    //  a - b ≡ a + (-b)
     A::axiom_sub_is_add_neg(a, b);
-    // b - a ≡ b + (-a)
+    //  b - a ≡ b + (-a)
     A::axiom_sub_is_add_neg(b, a);
-    // -(b - a) ≡ -(b + (-a))
+    //  -(b - a) ≡ -(b + (-a))
     A::axiom_neg_congruence(b.sub(a), b.add(a.neg()));
-    // -(b + (-a)) ≡ (-b) + (-(-a))
+    //  -(b + (-a)) ≡ (-b) + (-(-a))
     lemma_neg_add::<A>(b, a.neg());
     A::axiom_eqv_transitive(b.sub(a).neg(), b.add(a.neg()).neg(), b.neg().add(a.neg().neg()));
-    // -(-a) ≡ a
+    //  -(-a) ≡ a
     lemma_neg_involution::<A>(a);
-    // (-b) + (-(-a)) ≡ (-b) + a
+    //  (-b) + (-(-a)) ≡ (-b) + a
     lemma_add_congruence_right::<A>(b.neg(), a.neg().neg(), a);
     A::axiom_eqv_transitive(b.sub(a).neg(), b.neg().add(a.neg().neg()), b.neg().add(a));
-    // (-b) + a ≡ a + (-b)
+    //  (-b) + a ≡ a + (-b)
     A::axiom_add_commutative(b.neg(), a);
     A::axiom_eqv_transitive(b.sub(a).neg(), b.neg().add(a), a.add(b.neg()));
-    // a + (-b) ≡ a - b (symmetric)
+    //  a + (-b) ≡ a - b (symmetric)
     A::axiom_eqv_symmetric(a.sub(b), a.add(b.neg()));
-    // chain: a - b ≡ a + (-b) ≡ -(b - a) ... but let's use the other direction
-    // -(b-a) ≡ a + (-b) and a - b ≡ a + (-b)
-    // So a - b ≡ a + (-b) and -(b-a) ≡ a + (-b)
-    // Thus: a - b ≡ -(b - a)
+    //  chain: a - b ≡ a + (-b) ≡ -(b - a) ... but let's use the other direction
+    //  -(b-a) ≡ a + (-b) and a - b ≡ a + (-b)
+    //  So a - b ≡ a + (-b) and -(b-a) ≡ a + (-b)
+    //  Thus: a - b ≡ -(b - a)
     A::axiom_eqv_symmetric(b.sub(a).neg(), a.add(b.neg()));
     A::axiom_eqv_transitive(a.sub(b), a.add(b.neg()), b.sub(a).neg());
 }
 
-/// a - b ≡ 0 implies a ≡ b.
+///  a - b ≡ 0 implies a ≡ b.
 pub proof fn lemma_sub_eqv_zero_implies_eqv<A: AdditiveGroup>(a: A, b: A)
     requires
         a.sub(b).eqv(A::zero()),
     ensures
         a.eqv(b),
 {
-    // (a - b) + b ≡ a
+    //  (a - b) + b ≡ a
     lemma_sub_then_add_cancel::<A>(a, b);
-    // (a - b) + b ≡ 0 + b
+    //  (a - b) + b ≡ 0 + b
     A::axiom_add_congruence_left(a.sub(b), A::zero(), b);
-    // 0 + b ≡ b
+    //  0 + b ≡ b
     lemma_add_zero_left::<A>(b);
-    // a ≡ (a-b)+b ≡ 0+b ≡ b
+    //  a ≡ (a-b)+b ≡ 0+b ≡ b
     A::axiom_eqv_symmetric(a.sub(b).add(b), a);
     A::axiom_eqv_transitive(a, a.sub(b).add(b), A::zero().add(b));
     A::axiom_eqv_transitive(a, A::zero().add(b), b);
 }
 
-/// a ≡ b implies a - b ≡ 0.
+///  a ≡ b implies a - b ≡ 0.
 pub proof fn lemma_eqv_implies_sub_eqv_zero<A: AdditiveGroup>(a: A, b: A)
     requires
         a.eqv(b),
@@ -373,65 +373,65 @@ pub proof fn lemma_eqv_implies_sub_eqv_zero<A: AdditiveGroup>(a: A, b: A)
 {
     A::axiom_eqv_reflexive(b);
     lemma_sub_congruence::<A>(a, b, b, b);
-    // a - b ≡ b - b
+    //  a - b ≡ b - b
     lemma_sub_self::<A>(b);
     A::axiom_eqv_transitive(a.sub(b), b.sub(b), A::zero());
 }
 
-/// (-a) - (-b) ≡ b - a.
+///  (-a) - (-b) ≡ b - a.
 pub proof fn lemma_sub_neg_both<A: AdditiveGroup>(a: A, b: A)
     ensures
         a.neg().sub(b.neg()).eqv(b.sub(a)),
 {
-    // (-a) - (-b) ≡ (-a) + (-(-b))
+    //  (-a) - (-b) ≡ (-a) + (-(-b))
     A::axiom_sub_is_add_neg(a.neg(), b.neg());
-    // -(-b) ≡ b
+    //  -(-b) ≡ b
     lemma_neg_involution::<A>(b);
-    // (-a) + (-(-b)) ≡ (-a) + b
+    //  (-a) + (-(-b)) ≡ (-a) + b
     lemma_add_congruence_right::<A>(a.neg(), b.neg().neg(), b);
     A::axiom_eqv_transitive(a.neg().sub(b.neg()), a.neg().add(b.neg().neg()), a.neg().add(b));
-    // (-a) + b ≡ b + (-a)
+    //  (-a) + b ≡ b + (-a)
     A::axiom_add_commutative(a.neg(), b);
     A::axiom_eqv_transitive(a.neg().sub(b.neg()), a.neg().add(b), b.add(a.neg()));
-    // b + (-a) ≡ b - a (symmetric of sub_is_add_neg)
+    //  b + (-a) ≡ b - a (symmetric of sub_is_add_neg)
     A::axiom_sub_is_add_neg(b, a);
     A::axiom_eqv_symmetric(b.sub(a), b.add(a.neg()));
     A::axiom_eqv_transitive(a.neg().sub(b.neg()), b.add(a.neg()), b.sub(a));
 }
 
-/// (a + b) + (c + d) ≡ (a + c) + (b + d).
+///  (a + b) + (c + d) ≡ (a + c) + (b + d).
 pub proof fn lemma_add_rearrange_2x2<A: AdditiveGroup>(a: A, b: A, c: A, d: A)
     ensures
         a.add(b).add(c.add(d)).eqv(a.add(c).add(b.add(d))),
 {
-    // (a+b)+(c+d) ≡ a+(b+(c+d))     [assoc]
+    //  (a+b)+(c+d) ≡ a+(b+(c+d))     [assoc]
     A::axiom_add_associative(a, b, c.add(d));
 
-    // b+(c+d) ≡ (b+c)+d             [assoc reversed]
+    //  b+(c+d) ≡ (b+c)+d             [assoc reversed]
     A::axiom_add_associative(b, c, d);
     A::axiom_eqv_symmetric(b.add(c).add(d), b.add(c.add(d)));
 
-    // b+c ≡ c+b                     [comm]
+    //  b+c ≡ c+b                     [comm]
     A::axiom_add_commutative(b, c);
 
-    // (b+c)+d ≡ (c+b)+d             [cong]
+    //  (b+c)+d ≡ (c+b)+d             [cong]
     A::axiom_add_congruence_left(b.add(c), c.add(b), d);
 
-    // (c+b)+d ≡ c+(b+d)             [assoc]
+    //  (c+b)+d ≡ c+(b+d)             [assoc]
     A::axiom_add_associative(c, b, d);
 
-    // Chain: b+(c+d) ≡ (b+c)+d ≡ (c+b)+d ≡ c+(b+d)
+    //  Chain: b+(c+d) ≡ (b+c)+d ≡ (c+b)+d ≡ c+(b+d)
     A::axiom_eqv_transitive(b.add(c.add(d)), b.add(c).add(d), c.add(b).add(d));
     A::axiom_eqv_transitive(b.add(c.add(d)), c.add(b).add(d), c.add(b.add(d)));
 
-    // a+(b+(c+d)) ≡ a+(c+(b+d))     [cong right]
+    //  a+(b+(c+d)) ≡ a+(c+(b+d))     [cong right]
     lemma_add_congruence_right::<A>(a, b.add(c.add(d)), c.add(b.add(d)));
 
-    // a+(c+(b+d)) ≡ (a+c)+(b+d)     [assoc reversed]
+    //  a+(c+(b+d)) ≡ (a+c)+(b+d)     [assoc reversed]
     A::axiom_add_associative(a, c, b.add(d));
     A::axiom_eqv_symmetric(a.add(c).add(b.add(d)), a.add(c.add(b.add(d))));
 
-    // Chain: (a+b)+(c+d) ≡ a+(b+(c+d)) ≡ a+(c+(b+d)) ≡ (a+c)+(b+d)
+    //  Chain: (a+b)+(c+d) ≡ a+(b+(c+d)) ≡ a+(c+(b+d)) ≡ (a+c)+(b+d)
     A::axiom_eqv_transitive(
         a.add(b).add(c.add(d)),
         a.add(b.add(c.add(d))),
@@ -444,40 +444,40 @@ pub proof fn lemma_add_rearrange_2x2<A: AdditiveGroup>(a: A, b: A, c: A, d: A)
     );
 }
 
-/// If a + e ≡ a for all a (witnessed by a=0), then e ≡ 0.
-/// Specifically: 0 + e ≡ 0 implies e ≡ 0.
+///  If a + e ≡ a for all a (witnessed by a=0), then e ≡ 0.
+///  Specifically: 0 + e ≡ 0 implies e ≡ 0.
 pub proof fn lemma_add_identity_unique<A: AdditiveGroup>(e: A)
     requires
         A::zero().add(e).eqv(A::zero()),
     ensures
         e.eqv(A::zero()),
 {
-    // 0 + e ≡ e  [add_zero_left]
+    //  0 + e ≡ e  [add_zero_left]
     lemma_add_zero_left::<A>(e);
-    // 0 + e ≡ 0  [given]
-    // e ≡ 0 + e ≡ 0
+    //  0 + e ≡ 0  [given]
+    //  e ≡ 0 + e ≡ 0
     A::axiom_eqv_symmetric(A::zero().add(e), e);
     A::axiom_eqv_transitive(e, A::zero().add(e), A::zero());
 }
 
-/// If a + b ≡ 0, then b ≡ -a.
+///  If a + b ≡ 0, then b ≡ -a.
 pub proof fn lemma_neg_unique<A: AdditiveGroup>(a: A, b: A)
     requires
         a.add(b).eqv(A::zero()),
     ensures
         b.eqv(a.neg()),
 {
-    // a + (-a) ≡ 0
+    //  a + (-a) ≡ 0
     A::axiom_add_inverse_right(a);
-    // a + b ≡ 0 ≡ a + (-a)
+    //  a + b ≡ 0 ≡ a + (-a)
     A::axiom_eqv_symmetric(a.add(a.neg()), A::zero());
     A::axiom_eqv_transitive(a.add(b), A::zero(), a.add(a.neg()));
-    // By left cancellation: b ≡ -a
+    //  By left cancellation: b ≡ -a
     lemma_add_left_cancel::<A>(b, a.neg(), a);
 }
 
-/// Negation respects equivalence: a ≡ b implies -a ≡ -b.
-/// Convenience wrapper around axiom_neg_congruence.
+///  Negation respects equivalence: a ≡ b implies -a ≡ -b.
+///  Convenience wrapper around axiom_neg_congruence.
 pub proof fn lemma_neg_congruence<A: AdditiveGroup>(a: A, b: A)
     requires
         a.eqv(b),
@@ -487,33 +487,33 @@ pub proof fn lemma_neg_congruence<A: AdditiveGroup>(a: A, b: A)
     A::axiom_neg_congruence(a, b);
 }
 
-/// Telescoping subtraction: (a - b) + (b - c) ≡ a - c.
+///  Telescoping subtraction: (a - b) + (b - c) ≡ a - c.
 pub proof fn lemma_sub_add_sub<A: AdditiveGroup>(a: A, b: A, c: A)
     ensures
         a.sub(b).add(b.sub(c)).eqv(a.sub(c)),
 {
-    // Expand subs: (a - b) ≡ a + (-b), (b - c) ≡ b + (-c)
+    //  Expand subs: (a - b) ≡ a + (-b), (b - c) ≡ b + (-c)
     A::axiom_sub_is_add_neg(a, b);
     A::axiom_sub_is_add_neg(b, c);
     A::axiom_sub_is_add_neg(a, c);
 
-    // (a-b) + (b-c) ≡ (a+(-b)) + (b+(-c))
+    //  (a-b) + (b-c) ≡ (a+(-b)) + (b+(-c))
     lemma_add_congruence::<A>(a.sub(b), a.add(b.neg()), b.sub(c), b.add(c.neg()));
 
-    // (a+(-b)) + (b+(-c)) ≡ a + ((-b) + (b + (-c)))   [assoc]
+    //  (a+(-b)) + (b+(-c)) ≡ a + ((-b) + (b + (-c)))   [assoc]
     A::axiom_add_associative(a, b.neg(), b.add(c.neg()));
 
-    // (-b) + (b + (-c)) ≡ ((-b) + b) + (-c)            [assoc reversed]
+    //  (-b) + (b + (-c)) ≡ ((-b) + b) + (-c)            [assoc reversed]
     A::axiom_add_associative(b.neg(), b, c.neg());
     A::axiom_eqv_symmetric(b.neg().add(b).add(c.neg()), b.neg().add(b.add(c.neg())));
 
-    // (-b) + b ≡ 0
+    //  (-b) + b ≡ 0
     lemma_add_inverse_left::<A>(b);
-    // ((-b)+b)+(-c) ≡ 0+(-c)
+    //  ((-b)+b)+(-c) ≡ 0+(-c)
     A::axiom_add_congruence_left(b.neg().add(b), A::zero(), c.neg());
-    // 0+(-c) ≡ -c
+    //  0+(-c) ≡ -c
     lemma_add_zero_left::<A>(c.neg());
-    // Chain: (-b)+(b+(-c)) ≡ ((-b)+b)+(-c) ≡ 0+(-c) ≡ -c
+    //  Chain: (-b)+(b+(-c)) ≡ ((-b)+b)+(-c) ≡ 0+(-c) ≡ -c
     A::axiom_eqv_transitive(
         b.neg().add(b.add(c.neg())),
         b.neg().add(b).add(c.neg()),
@@ -525,24 +525,24 @@ pub proof fn lemma_sub_add_sub<A: AdditiveGroup>(a: A, b: A, c: A)
         c.neg(),
     );
 
-    // a + ((-b)+(b+(-c))) ≡ a + (-c)
+    //  a + ((-b)+(b+(-c))) ≡ a + (-c)
     lemma_add_congruence_right::<A>(a, b.neg().add(b.add(c.neg())), c.neg());
 
-    // Chain: (a+(-b))+(b+(-c)) ≡ a+((-b)+(b+(-c))) ≡ a+(-c)
+    //  Chain: (a+(-b))+(b+(-c)) ≡ a+((-b)+(b+(-c))) ≡ a+(-c)
     A::axiom_eqv_transitive(
         a.add(b.neg()).add(b.add(c.neg())),
         a.add(b.neg().add(b.add(c.neg()))),
         a.add(c.neg()),
     );
 
-    // (a-b)+(b-c) ≡ (a+(-b))+(b+(-c)) ≡ a+(-c)
+    //  (a-b)+(b-c) ≡ (a+(-b))+(b+(-c)) ≡ a+(-c)
     A::axiom_eqv_transitive(
         a.sub(b).add(b.sub(c)),
         a.add(b.neg()).add(b.add(c.neg())),
         a.add(c.neg()),
     );
 
-    // a+(-c) ≡ a-c (symmetric of sub_is_add_neg)
+    //  a+(-c) ≡ a-c (symmetric of sub_is_add_neg)
     A::axiom_eqv_symmetric(a.sub(c), a.add(c.neg()));
     A::axiom_eqv_transitive(
         a.sub(b).add(b.sub(c)),
@@ -551,56 +551,56 @@ pub proof fn lemma_sub_add_sub<A: AdditiveGroup>(a: A, b: A, c: A)
     );
 }
 
-/// Right-cancel addend in subtraction: (b + c) - (a + c) ≡ b - a.
+///  Right-cancel addend in subtraction: (b + c) - (a + c) ≡ b - a.
 pub proof fn lemma_add_sub_cancel_right<A: AdditiveGroup>(b: A, a: A, c: A)
     ensures
         b.add(c).sub(a.add(c)).eqv(b.sub(a)),
 {
-    // Step 1: expand sub to add-neg
-    // (b+c) - (a+c) ≡ (b+c) + (-(a+c))
+    //  Step 1: expand sub to add-neg
+    //  (b+c) - (a+c) ≡ (b+c) + (-(a+c))
     A::axiom_sub_is_add_neg(b.add(c), a.add(c));
 
-    // Step 2: -(a+c) ≡ (-a) + (-c) by neg_add
+    //  Step 2: -(a+c) ≡ (-a) + (-c) by neg_add
     lemma_neg_add::<A>(a, c);
-    // (-a) + (-c) ≡ (-c) + (-a) by commutativity
+    //  (-a) + (-c) ≡ (-c) + (-a) by commutativity
     A::axiom_add_commutative(a.neg(), c.neg());
-    // -(a+c) ≡ (-c) + (-a) by transitivity
+    //  -(a+c) ≡ (-c) + (-a) by transitivity
     A::axiom_eqv_transitive(
         a.add(c).neg(),
         a.neg().add(c.neg()),
         c.neg().add(a.neg()),
     );
 
-    // Step 3: (b+c) + ((-c)+(-a))
-    // congruence to replace -(a+c) with (-c)+(-a)
+    //  Step 3: (b+c) + ((-c)+(-a))
+    //  congruence to replace -(a+c) with (-c)+(-a)
     lemma_add_congruence_right::<A>(b.add(c), a.add(c).neg(), c.neg().add(a.neg()));
 
-    // Now we have: (b+c) + (-(a+c)) ≡ (b+c) + ((-c)+(-a))
-    // Chain with sub expansion
+    //  Now we have: (b+c) + (-(a+c)) ≡ (b+c) + ((-c)+(-a))
+    //  Chain with sub expansion
     A::axiom_eqv_transitive(
         b.add(c).sub(a.add(c)),
         b.add(c).add(a.add(c).neg()),
         b.add(c).add(c.neg().add(a.neg())),
     );
 
-    // Step 4: (b+c) + ((-c)+(-a)) ≡ b + (c + ((-c)+(-a)))  by assoc
+    //  Step 4: (b+c) + ((-c)+(-a)) ≡ b + (c + ((-c)+(-a)))  by assoc
     A::axiom_add_associative(b, c, c.neg().add(a.neg()));
 
-    // Step 5: c + ((-c)+(-a)) ≡ (c+(-c)) + (-a)  by assoc (reversed)
+    //  Step 5: c + ((-c)+(-a)) ≡ (c+(-c)) + (-a)  by assoc (reversed)
     A::axiom_add_associative(c, c.neg(), a.neg());
     A::axiom_eqv_symmetric(
         c.add(c.neg()).add(a.neg()),
         c.add(c.neg().add(a.neg())),
     );
 
-    // Step 6: c + (-c) ≡ 0
+    //  Step 6: c + (-c) ≡ 0
     A::axiom_add_inverse_right(c);
-    // (c+(-c)) + (-a) ≡ 0 + (-a)
+    //  (c+(-c)) + (-a) ≡ 0 + (-a)
     A::axiom_add_congruence_left(c.add(c.neg()), A::zero(), a.neg());
-    // 0 + (-a) ≡ -a
+    //  0 + (-a) ≡ -a
     lemma_add_zero_left::<A>(a.neg());
 
-    // Chain: c+((-c)+(-a)) ≡ (c+(-c))+(-a) ≡ 0+(-a) ≡ -a
+    //  Chain: c+((-c)+(-a)) ≡ (c+(-c))+(-a) ≡ 0+(-a) ≡ -a
     A::axiom_eqv_transitive(
         c.add(c.neg().add(a.neg())),
         c.add(c.neg()).add(a.neg()),
@@ -612,17 +612,17 @@ pub proof fn lemma_add_sub_cancel_right<A: AdditiveGroup>(b: A, a: A, c: A)
         a.neg(),
     );
 
-    // Step 7: b + (c+((-c)+(-a))) ≡ b + (-a)
+    //  Step 7: b + (c+((-c)+(-a))) ≡ b + (-a)
     lemma_add_congruence_right::<A>(b, c.add(c.neg().add(a.neg())), a.neg());
 
-    // Chain: (b+c)+((-c)+(-a)) ≡ b+(c+((-c)+(-a))) ≡ b+(-a)
+    //  Chain: (b+c)+((-c)+(-a)) ≡ b+(c+((-c)+(-a))) ≡ b+(-a)
     A::axiom_eqv_transitive(
         b.add(c).add(c.neg().add(a.neg())),
         b.add(c.add(c.neg().add(a.neg()))),
         b.add(a.neg()),
     );
 
-    // Step 8: b + (-a) ≡ b - a  (symmetric of sub_is_add_neg)
+    //  Step 8: b + (-a) ≡ b - a  (symmetric of sub_is_add_neg)
     A::axiom_sub_is_add_neg(b, a);
     A::axiom_eqv_symmetric(b.sub(a), b.add(a.neg()));
     A::axiom_eqv_transitive(
@@ -631,7 +631,7 @@ pub proof fn lemma_add_sub_cancel_right<A: AdditiveGroup>(b: A, a: A, c: A)
         b.sub(a),
     );
 
-    // Final chain: (b+c)-(a+c) ≡ (b+c)+((-c)+(-a)) ≡ b-a
+    //  Final chain: (b+c)-(a+c) ≡ (b+c)+((-c)+(-a)) ≡ b-a
     A::axiom_eqv_transitive(
         b.add(c).sub(a.add(c)),
         b.add(c).add(c.neg().add(a.neg())),
@@ -639,43 +639,43 @@ pub proof fn lemma_add_sub_cancel_right<A: AdditiveGroup>(b: A, a: A, c: A)
     );
 }
 
-/// Negation of subtraction: -(a - b) ≡ b - a.
+///  Negation of subtraction: -(a - b) ≡ b - a.
 pub proof fn lemma_neg_sub<A: AdditiveGroup>(a: A, b: A)
     ensures
         a.sub(b).neg().eqv(b.sub(a)),
 {
-    // (a-b) + (b-a) ≡ a-a ≡ 0  by telescoping
+    //  (a-b) + (b-a) ≡ a-a ≡ 0  by telescoping
     lemma_sub_add_sub::<A>(a, b, a);
     A::axiom_add_inverse_right(a);
     A::axiom_sub_is_add_neg(a, a);
     A::axiom_eqv_transitive(a.sub(b).add(b.sub(a)), a.sub(a), a.add(a.neg()));
     A::axiom_eqv_transitive(a.sub(b).add(b.sub(a)), a.add(a.neg()), A::zero());
-    // (a-b) + (b-a) ≡ 0 → (b-a) ≡ -(a-b)
+    //  (a-b) + (b-a) ≡ 0 → (b-a) ≡ -(a-b)
     lemma_neg_unique::<A>(a.sub(b), b.sub(a));
-    // (b-a) ≡ -(a-b) → -(a-b) ≡ (b-a)
+    //  (b-a) ≡ -(a-b) → -(a-b) ≡ (b-a)
     A::axiom_eqv_symmetric(b.sub(a), a.sub(b).neg());
 }
 
-/// Triple telescoping: (a-b) + (b-c) + (c-a) ≡ 0.
+///  Triple telescoping: (a-b) + (b-c) + (c-a) ≡ 0.
 pub proof fn lemma_sub_telescope_triple<A: AdditiveGroup>(a: A, b: A, c: A)
     ensures
         a.sub(b).add(b.sub(c)).add(c.sub(a)).eqv(A::zero()),
 {
-    // (a-b) + (b-c) ≡ a-c  by lemma_sub_add_sub
+    //  (a-b) + (b-c) ≡ a-c  by lemma_sub_add_sub
     lemma_sub_add_sub::<A>(a, b, c);
-    // [(a-b)+(b-c)] + (c-a) ≡ (a-c) + (c-a)
+    //  [(a-b)+(b-c)] + (c-a) ≡ (a-c) + (c-a)
     A::axiom_eqv_reflexive(c.sub(a));
     lemma_add_congruence::<A>(
         a.sub(b).add(b.sub(c)), a.sub(c),
         c.sub(a), c.sub(a),
     );
-    // (a-c) + (c-a) ≡ a-a ≡ 0
+    //  (a-c) + (c-a) ≡ a-a ≡ 0
     lemma_sub_add_sub::<A>(a, c, a);
     A::axiom_add_inverse_right(a);
     A::axiom_sub_is_add_neg(a, a);
     A::axiom_eqv_transitive(a.sub(c).add(c.sub(a)), a.sub(a), a.add(a.neg()));
     A::axiom_eqv_transitive(a.sub(c).add(c.sub(a)), a.add(a.neg()), A::zero());
-    // Chain
+    //  Chain
     A::axiom_eqv_transitive(
         a.sub(b).add(b.sub(c)).add(c.sub(a)),
         a.sub(c).add(c.sub(a)),
@@ -683,4 +683,4 @@ pub proof fn lemma_sub_telescope_triple<A: AdditiveGroup>(a: A, b: A, c: A)
     );
 }
 
-} // verus!
+} //  verus!

@@ -8,13 +8,13 @@ use vstd::prelude::*;
 
 verus! {
 
-// ============================================================
-//  Spec functions: Horner evaluation
-// ============================================================
+//  ============================================================
+//   Spec functions: Horner evaluation
+//  ============================================================
 
-/// Horner evaluation of a polynomial represented by its coefficient sequence.
-/// coeffs[0] + x * (coeffs[1] + x * (... + x * coeffs[n]))
-/// Computes c₀ + c₁x + c₂x² + ... + cₙxⁿ in n muls and n adds.
+///  Horner evaluation of a polynomial represented by its coefficient sequence.
+///  coeffs[0] + x * (coeffs[1] + x * (... + x * coeffs[n]))
+///  Computes c₀ + c₁x + c₂x² + ... + cₙxⁿ in n muls and n adds.
 pub open spec fn horner<R: Ring>(coeffs: Seq<R>, x: R) -> R
     decreases coeffs.len(),
 {
@@ -25,7 +25,7 @@ pub open spec fn horner<R: Ring>(coeffs: Seq<R>, x: R) -> R
     }
 }
 
-/// Direct (naive) polynomial evaluation: sum of coeffs[i] * x^i.
+///  Direct (naive) polynomial evaluation: sum of coeffs[i] * x^i.
 pub open spec fn eval_direct<R: Ring>(coeffs: Seq<R>, x: R, i: nat) -> R
     decreases coeffs.len() - i,
 {
@@ -38,7 +38,7 @@ pub open spec fn eval_direct<R: Ring>(coeffs: Seq<R>, x: R, i: nat) -> R
     }
 }
 
-/// Power: x^n (used locally to avoid circular dependency with power module).
+///  Power: x^n (used locally to avoid circular dependency with power module).
 pub open spec fn pow_spec<R: Ring>(base: R, exp: nat) -> R
     decreases exp,
 {
@@ -46,11 +46,11 @@ pub open spec fn pow_spec<R: Ring>(base: R, exp: nat) -> R
     else { base.mul(pow_spec::<R>(base, (exp - 1) as nat)) }
 }
 
-// ============================================================
-//  Basic Horner lemmas
-// ============================================================
+//  ============================================================
+//   Basic Horner lemmas
+//  ============================================================
 
-/// horner([], x) ≡ 0.
+///  horner([], x) ≡ 0.
 pub proof fn lemma_horner_empty<R: Ring>(x: R)
     ensures
         horner::<R>(Seq::empty(), x).eqv(R::zero()),
@@ -58,7 +58,7 @@ pub proof fn lemma_horner_empty<R: Ring>(x: R)
     R::axiom_eqv_reflexive(R::zero());
 }
 
-/// horner([c], x) ≡ c.
+///  horner([c], x) ≡ c.
 pub proof fn lemma_horner_single<R: Ring>(c: R, x: R)
     ensures
         horner::<R>(seq![c], x).eqv(c),
@@ -79,7 +79,7 @@ pub proof fn lemma_horner_single<R: Ring>(c: R, x: R)
     );
 }
 
-/// horner([c₀, c₁], x) ≡ c₀ + c₁ * x.
+///  horner([c₀, c₁], x) ≡ c₀ + c₁ * x.
 pub proof fn lemma_horner_linear<R: Ring>(c0: R, c1: R, x: R)
     ensures
         horner::<R>(seq![c0, c1], x).eqv(c0.add(c1.mul(x))),
@@ -99,7 +99,7 @@ pub proof fn lemma_horner_linear<R: Ring>(c0: R, c1: R, x: R)
     );
 }
 
-/// horner([c₀, c₁, c₂], x) ≡ c₀ + c₁*x + c₂*x².
+///  horner([c₀, c₁, c₂], x) ≡ c₀ + c₁*x + c₂*x².
 pub proof fn lemma_horner_quadratic<R: Ring>(c0: R, c1: R, c2: R, x: R)
     ensures
         horner::<R>(seq![c0, c1, c2], x).eqv(c0.add(c1.mul(x).add(c2.mul(x.mul(x))))),
@@ -147,7 +147,7 @@ pub proof fn lemma_horner_quadratic<R: Ring>(c0: R, c1: R, c2: R, x: R)
     );
 }
 
-/// Evaluating at zero: horner(coeffs, 0) ≡ coeffs[0] when non-empty.
+///  Evaluating at zero: horner(coeffs, 0) ≡ coeffs[0] when non-empty.
 pub proof fn lemma_horner_at_zero<R: Ring>(coeffs: Seq<R>)
     requires
         coeffs.len() > 0,
@@ -169,8 +169,8 @@ pub proof fn lemma_horner_at_zero<R: Ring>(coeffs: Seq<R>)
     );
 }
 
-/// Horner respects equivalence of x:
-/// if x1 ≡ x2, then horner(coeffs, x1) ≡ horner(coeffs, x2).
+///  Horner respects equivalence of x:
+///  if x1 ≡ x2, then horner(coeffs, x1) ≡ horner(coeffs, x2).
 pub proof fn lemma_horner_congruence_x<R: Ring>(coeffs: Seq<R>, x1: R, x2: R)
     requires
         x1.eqv(x2),
@@ -193,38 +193,38 @@ pub proof fn lemma_horner_congruence_x<R: Ring>(coeffs: Seq<R>, x1: R, x2: R)
     }
 }
 
-// ============================================================
-//  Polynomial ring operations
-// ============================================================
+//  ============================================================
+//   Polynomial ring operations
+//  ============================================================
 
-/// A polynomial over a ring R, represented as a sequence of coefficients.
-/// The coefficient at index i is the coefficient of x^i.
-/// The zero polynomial is represented by an empty sequence.
+///  A polynomial over a ring R, represented as a sequence of coefficients.
+///  The coefficient at index i is the coefficient of x^i.
+///  The zero polynomial is represented by an empty sequence.
 pub ghost struct SpecPoly<R: Ring> {
     pub coeffs: Seq<R>,
 }
 
-/// Construct a polynomial from a sequence of coefficients.
+///  Construct a polynomial from a sequence of coefficients.
 pub open spec fn poly<R: Ring>(coeffs: Seq<R>) -> SpecPoly<R> {
     SpecPoly { coeffs }
 }
 
-/// The zero polynomial.
+///  The zero polynomial.
 pub open spec fn poly_zero<R: Ring>() -> SpecPoly<R> {
     SpecPoly { coeffs: Seq::empty() }
 }
 
-/// The constant polynomial with value c.
+///  The constant polynomial with value c.
 pub open spec fn poly_constant<R: Ring>(c: R) -> SpecPoly<R> {
     SpecPoly { coeffs: seq![c] }
 }
 
-/// The monomial c * x^n.
+///  The monomial c * x^n.
 pub open spec fn poly_monomial<R: Ring>(c: R, n: nat) -> SpecPoly<R> {
     SpecPoly { coeffs: Seq::new(n + 1, |i: int| if i == n as int { c } else { R::zero() }) }
 }
 
-/// Degree of a polynomial.
+///  Degree of a polynomial.
 pub open spec fn degree<R: Ring>(p: SpecPoly<R>) -> nat
     decreases p.coeffs.len(),
 {
@@ -240,12 +240,12 @@ pub open spec fn degree<R: Ring>(p: SpecPoly<R>) -> nat
     }
 }
 
-/// Check if polynomial is zero.
+///  Check if polynomial is zero.
 pub open spec fn is_zero<R: Ring>(p: SpecPoly<R>) -> bool {
     forall|i: int| 0 <= i < p.coeffs.len() ==> p.coeffs[i].eqv(R::zero())
 }
 
-/// Leading coefficient.
+///  Leading coefficient.
 pub open spec fn leading_coeff<R: Ring>(p: SpecPoly<R>) -> R {
     let d = degree(p);
     if p.coeffs.len() == 0 {
@@ -255,7 +255,7 @@ pub open spec fn leading_coeff<R: Ring>(p: SpecPoly<R>) -> R {
     }
 }
 
-/// Addition: coefficient-wise.
+///  Addition: coefficient-wise.
 pub open spec fn poly_add<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R> {
     let len = if p.coeffs.len() >= q.coeffs.len() { p.coeffs.len() } else { q.coeffs.len() };
     SpecPoly {
@@ -267,19 +267,19 @@ pub open spec fn poly_add<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R
     }
 }
 
-/// Negation: negate each coefficient.
+///  Negation: negate each coefficient.
 pub open spec fn poly_neg<R: Ring>(p: SpecPoly<R>) -> SpecPoly<R> {
     SpecPoly {
         coeffs: Seq::new(p.coeffs.len(), |i: int| p.coeffs[i].neg()),
     }
 }
 
-/// Subtraction: p - q = p + (-q).
+///  Subtraction: p - q = p + (-q).
 pub open spec fn poly_sub<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R> {
     poly_add(p, poly_neg(q))
 }
 
-/// Multiplication: convolution of coefficients.
+///  Multiplication: convolution of coefficients.
 pub open spec fn poly_mul<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R> {
     if is_zero(p) || is_zero(q) {
         poly_zero()
@@ -301,12 +301,12 @@ pub open spec fn poly_mul<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> SpecPoly<R
     }
 }
 
-/// One polynomial: constant 1.
+///  One polynomial: constant 1.
 pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
     poly_constant(R::one())
 }
 
-    /// Polynomial equivalence: same length and all coefficients equivalent.
+    ///  Polynomial equivalence: same length and all coefficients equivalent.
     pub open spec fn poly_eqv<R: Ring>(p: SpecPoly<R>, q: SpecPoly<R>) -> bool {
         if p.coeffs.len() != q.coeffs.len() {
             false
@@ -315,9 +315,9 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
         }
     }
 
-    // ============================================================
-    //  Equivalence lemmas
-    // ============================================================
+    //  ============================================================
+    //   Equivalence lemmas
+    //  ============================================================
 
     pub proof fn lemma_poly_eqv_reflexive<R: Ring>(p: SpecPoly<R>)
         ensures
@@ -352,11 +352,11 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
     }
 
 
-    // ============================================================
-    //  Division with remainder (Euclidean algorithm)
-    // ============================================================
-    // Note: We use a fuel parameter for termination. The wrapper `poly_div_rem` supplies enough fuel.
-    /// Recursive division with remainder.
+    //  ============================================================
+    //   Division with remainder (Euclidean algorithm)
+    //  ============================================================
+    //  Note: We use a fuel parameter for termination. The wrapper `poly_div_rem` supplies enough fuel.
+    ///  Recursive division with remainder.
     pub open spec fn poly_div_rem_rec<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>, fuel: nat) -> (SpecPoly<R>, SpecPoly<R>)
         decreases fuel,
     {
@@ -379,22 +379,22 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
         }
     }
 
-    /// Public interface for division with remainder.
+    ///  Public interface for division with remainder.
     pub open spec fn poly_div_rem<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>) -> (SpecPoly<R>, SpecPoly<R>) {
         let fuel = p.coeffs.len() + 1;
         poly_div_rem_rec(p, divisor, fuel)
     }
 
-    /// Polynomial remainder.
+    ///  Polynomial remainder.
     pub open spec fn poly_mod<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>) -> SpecPoly<R> {
         poly_div_rem(p, divisor).1
     }
 
-// ============================================================
-//  Correctness lemmas (to be fully proven incrementally)
-// ============================================================
+//  ============================================================
+//   Correctness lemmas (to be fully proven incrementally)
+//  ============================================================
 
-    /// Correctness of poly_div_rem_rec. (admitted)
+    ///  Correctness of poly_div_rem_rec. (admitted)
     pub proof fn lemma_poly_div_rem_correct<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>)
         requires
             !is_zero(divisor),
@@ -403,7 +403,7 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
         admit();
     }
 
-    /// Degree of remainder from poly_mod is less than divisor's degree. (admitted)
+    ///  Degree of remainder from poly_mod is less than divisor's degree. (admitted)
     pub proof fn lemma_poly_mod_degree<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>)
         requires
             !is_zero(divisor),
@@ -412,7 +412,7 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
         admit();
     }
 
-    /// After subtracting leading term multiple, degree strictly decreases. (admitted)
+    ///  After subtracting leading term multiple, degree strictly decreases. (admitted)
     pub proof fn lemma_poly_sub_leading_decrease<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>)
         requires
             !is_zero(divisor),
@@ -422,7 +422,7 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
         admit();
     }
 
-    /// Uniqueness of remainder. (admitted)
+    ///  Uniqueness of remainder. (admitted)
     pub proof fn lemma_poly_div_rem_unique<R: Field>(p: SpecPoly<R>, divisor: SpecPoly<R>, r1: SpecPoly<R>, r2: SpecPoly<R>)
         requires
             !is_zero(divisor),
@@ -435,4 +435,4 @@ pub open spec fn poly_one<R: Ring>() -> SpecPoly<R> {
         admit();
     }
 
-} // verus!
+} //  verus!

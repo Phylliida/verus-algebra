@@ -1,7 +1,7 @@
-/// Implementation of Ring and OrderedRing for the built-in `int` type.
+///  Implementation of Ring and OrderedRing for the built-in `int` type.
 ///
-/// Since `int` has native arithmetic, all axioms are trivially provable.
-/// This enables using `sum::<int>` and all summation lemmas directly with integers.
+///  Since `int` has native arithmetic, all axioms are trivially provable.
+///  This enables using `sum::<int>` and all summation lemmas directly with integers.
 use vstd::prelude::*;
 use crate::traits::equivalence::Equivalence;
 use crate::traits::additive_commutative_monoid::AdditiveCommutativeMonoid;
@@ -120,4 +120,4 @@ impl OrderedRing for int {
     }
 }
 
-} // verus!
+} //  verus!

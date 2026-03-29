@@ -103,7 +103,7 @@ trait EuclideanDomain: IntegralDomain {
     spec fn euclidean_norm(self) -> nat;
     spec fn euclidean_div(self, other: Self) -> Self;
     spec fn euclidean_rem(self, other: Self) -> Self;
-    // axioms about norm decreasing, division + remainder identity
+    //  axioms about norm decreasing, division + remainder identity
 }
 ```
 
@@ -130,7 +130,7 @@ resultants for intersection computation.
 
 ```
 pub struct Polynomial<T: Ring> {
-    pub coeffs: Seq<T>,  // coeffs[i] is coefficient of x^i
+    pub coeffs: Seq<T>,  //  coeffs[i] is coefficient of x^i
 }
 ```
 
@@ -175,7 +175,7 @@ A proper `Module` (or `VectorSpace`) trait would allow generic linear algebra.
 ```
 trait Module<R: Ring>: AdditiveGroup {
     spec fn scale(r: R, self) -> Self;
-    // axioms: distributes over both additions, associative with ring mul, 1*v = v
+    //  axioms: distributes over both additions, associative with ring mul, 1*v = v
 }
 ```
 
@@ -191,7 +191,7 @@ trait Module<R: Ring>: AdditiveGroup {
 ```
 trait InnerProductSpace<R: OrderedField>: Module<R> {
     spec fn inner(self, other: Self) -> R;
-    // axioms: symmetric, bilinear, positive-definite
+    //  axioms: symmetric, bilinear, positive-definite
 }
 ```
 
@@ -209,7 +209,7 @@ trait InnerProductSpace<R: OrderedField>: Module<R> {
 ```
 trait NormedSpace<R: OrderedField>: InnerProductSpace<R> {
     spec fn norm_sq(self) -> R { inner(self, self) }
-    // No square root needed — work with norm_sq everywhere
+    //  No square root needed — work with norm_sq everywhere
 }
 ```
 
