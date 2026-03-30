@@ -33,48 +33,48 @@ verus! {
 ///  to allow copying internal context (e.g., radicand values, format info).
 pub trait RuntimeRingOps<V: Ring>: Sized {
     ///  Map this runtime element to its spec-level counterpart.
-    spec fn view(&self) -> V;
+    spec fn model(&self) -> V;
 
     ///  Well-formedness: runtime fields match the ghost model.
-    spec fn wf(&self) -> bool;
+    spec fn wf_spec(&self) -> bool;
 
     //  ─── Ring operations ─────────────────────────────────────────
 
     fn add(&self, rhs: &Self) -> (out: Self)
-        requires self.wf(), rhs.wf()
-        ensures out.wf(), out.view() == self.view().add(rhs.view());
+        requires self.wf_spec(), rhs.wf_spec()
+        ensures out.wf_spec(), out.model() == self.model().add(rhs.model());
 
     fn sub(&self, rhs: &Self) -> (out: Self)
-        requires self.wf(), rhs.wf()
-        ensures out.wf(), out.view() == self.view().sub(rhs.view());
+        requires self.wf_spec(), rhs.wf_spec()
+        ensures out.wf_spec(), out.model() == self.model().sub(rhs.model());
 
     fn neg(&self) -> (out: Self)
-        requires self.wf()
-        ensures out.wf(), out.view() == self.view().neg();
+        requires self.wf_spec()
+        ensures out.wf_spec(), out.model() == self.model().neg();
 
     fn mul(&self, rhs: &Self) -> (out: Self)
-        requires self.wf(), rhs.wf()
-        ensures out.wf(), out.view() == self.view().mul(rhs.view());
+        requires self.wf_spec(), rhs.wf_spec()
+        ensures out.wf_spec(), out.model() == self.model().mul(rhs.model());
 
     //  ─── Equivalence ─────────────────────────────────────────────
 
     fn eq(&self, rhs: &Self) -> (out: bool)
-        requires self.wf(), rhs.wf()
-        ensures out == self.view().eqv(rhs.view());
+        requires self.wf_spec(), rhs.wf_spec()
+        ensures out == self.model().eqv(rhs.model());
 
     //  ─── Copy and construction ───────────────────────────────────
 
     fn copy(&self) -> (out: Self)
-        requires self.wf()
-        ensures out.wf(), out.view() == self.view();
+        requires self.wf_spec()
+        ensures out.wf_spec(), out.model() == self.model();
 
     fn zero_like(&self) -> (out: Self)
-        requires self.wf()
-        ensures out.wf(), out.view() == V::zero();
+        requires self.wf_spec()
+        ensures out.wf_spec(), out.model() == V::zero();
 
     fn one_like(&self) -> (out: Self)
-        requires self.wf()
-        ensures out.wf(), out.view() == V::one();
+        requires self.wf_spec()
+        ensures out.wf_spec(), out.model() == V::one();
 }
 
 //  ═══════════════════════════════════════════════════════════════════
@@ -85,20 +85,20 @@ pub trait RuntimeRingOps<V: Ring>: Sized {
 pub trait RuntimeFieldOps<V: Field>: RuntimeRingOps<V> {
     fn recip(&self) -> (out: Self)
         requires
-            self.wf(),
-            !self.view().eqv(V::zero()),
+            self.wf_spec(),
+            !self.model().eqv(V::zero()),
         ensures
-            out.wf(),
-            out.view() == self.view().recip();
+            out.wf_spec(),
+            out.model() == self.model().recip();
 
     fn div(&self, rhs: &Self) -> (out: Self)
         requires
-            self.wf(),
-            rhs.wf(),
-            !rhs.view().eqv(V::zero()),
+            self.wf_spec(),
+            rhs.wf_spec(),
+            !rhs.model().eqv(V::zero()),
         ensures
-            out.wf(),
-            out.view() == self.view().div(rhs.view());
+            out.wf_spec(),
+            out.model() == self.model().div(rhs.model());
 }
 
 //  ═══════════════════════════════════════════════════════════════════
@@ -108,12 +108,12 @@ pub trait RuntimeFieldOps<V: Field>: RuntimeRingOps<V> {
 ///  Exec-level ordered field operations: extends field with ordering.
 pub trait RuntimeOrderedFieldOps<V: OrderedField>: RuntimeFieldOps<V> {
     fn le(&self, rhs: &Self) -> (out: bool)
-        requires self.wf(), rhs.wf()
-        ensures out == self.view().le(rhs.view());
+        requires self.wf_spec(), rhs.wf_spec()
+        ensures out == self.model().le(rhs.model());
 
     fn lt(&self, rhs: &Self) -> (out: bool)
-        requires self.wf(), rhs.wf()
-        ensures out == self.view().lt(rhs.view());
+        requires self.wf_spec(), rhs.wf_spec()
+        ensures out == self.model().lt(rhs.model());
 }
 
 } //  verus!
