@@ -114,6 +114,29 @@ pub trait RuntimeOrderedFieldOps<V: OrderedField>: RuntimeFieldOps<V> {
     fn lt(&self, rhs: &Self) -> (out: bool)
         requires self.wf_spec(), rhs.wf_spec()
         ensures out == self.model().lt(rhs.model());
+
+    fn min(self, rhs: Self) -> (out: Self)
+        requires self.wf_spec(), rhs.wf_spec(),
+        ensures out.wf_spec(), out.model() == crate::min_max::min::<V>(self.model(), rhs.model()),
+    {
+        if self.le(&rhs) { self } else { rhs }
+    }
+
+    fn max(self, rhs: Self) -> (out: Self)
+        requires self.wf_spec(), rhs.wf_spec(),
+        ensures out.wf_spec(), out.model() == crate::min_max::max::<V>(self.model(), rhs.model()),
+    {
+        if self.le(&rhs) { rhs } else { self }
+    }
+
+    fn clamp(self, lo: Self, hi: Self) -> (out: Self)
+        requires self.wf_spec(), lo.wf_spec(), hi.wf_spec(),
+        ensures out.wf_spec(),
+            out.model() == crate::min_max::max::<V>(lo.model(), crate::min_max::min::<V>(self.model(), hi.model())),
+    {
+        let mid = if self.le(&hi) { self } else { hi };
+        if lo.le(&mid) { mid } else { lo }
+    }
 }
 
 } //  verus!
