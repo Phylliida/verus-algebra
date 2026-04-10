@@ -551,6 +551,46 @@ pub proof fn lemma_sub_add_sub<A: AdditiveGroup>(a: A, b: A, c: A)
     );
 }
 
+///  4-arg telescoping: (a - b) + (c - d) ≡ (a + c) - (b + d).
+pub proof fn lemma_sub_add_sub_4arg<A: AdditiveGroup>(a: A, b: A, c: A, d: A)
+    ensures
+        a.sub(b).add(c.sub(d)).eqv(a.add(c).sub(b.add(d))),
+{
+    //  Expand subs to add-neg form
+    A::axiom_sub_is_add_neg(a, b);
+    A::axiom_sub_is_add_neg(c, d);
+    //  (a-b)+(c-d) ≡ (a+(-b))+(c+(-d))  [add_congruence]
+    lemma_add_congruence::<A>(
+        a.sub(b), a.add(b.neg()),
+        c.sub(d), c.add(d.neg()),
+    );
+    //  (a+(-b))+(c+(-d)) ≡ (a+c)+((-b)+(-d))  [rearrange 2x2]
+    lemma_add_rearrange_2x2::<A>(a, b.neg(), c, d.neg());
+    A::axiom_eqv_transitive(
+        a.sub(b).add(c.sub(d)),
+        a.add(b.neg()).add(c.add(d.neg())),
+        a.add(c).add(b.neg().add(d.neg())),
+    );
+    //  -(b+d) ≡ (-b)+(-d) → symmetric: (-b)+(-d) ≡ -(b+d)
+    lemma_neg_add::<A>(b, d);
+    A::axiom_eqv_symmetric(b.add(d).neg(), b.neg().add(d.neg()));
+    //  (a+c)+((-b)+(-d)) ≡ (a+c)+(-(b+d))  [add_congruence_right]
+    lemma_add_congruence_right::<A>(a.add(c), b.neg().add(d.neg()), b.add(d).neg());
+    A::axiom_eqv_transitive(
+        a.sub(b).add(c.sub(d)),
+        a.add(c).add(b.neg().add(d.neg())),
+        a.add(c).add(b.add(d).neg()),
+    );
+    //  (a+c)+(-(b+d)) ≡ (a+c)-(b+d)  [symmetric of sub_is_add_neg]
+    A::axiom_sub_is_add_neg(a.add(c), b.add(d));
+    A::axiom_eqv_symmetric(a.add(c).sub(b.add(d)), a.add(c).add(b.add(d).neg()));
+    A::axiom_eqv_transitive(
+        a.sub(b).add(c.sub(d)),
+        a.add(c).add(b.add(d).neg()),
+        a.add(c).sub(b.add(d)),
+    );
+}
+
 ///  Right-cancel addend in subtraction: (b + c) - (a + c) ≡ b - a.
 pub proof fn lemma_add_sub_cancel_right<A: AdditiveGroup>(b: A, a: A, c: A)
     ensures
